@@ -3,7 +3,6 @@ import {
     Model,
     Table,
     PrimaryKey,
-    AutoIncrement,
     Unique,
     AllowNull,
     Default,
@@ -11,12 +10,12 @@ import {
     CreatedAt,
     UpdatedAt,
   } from 'sequelize-typescript';
-  
+  import { v4 as uuidv4 } from 'uuid';
   @Table({ tableName: 'users' })
   export class User extends Model<User> {
     @PrimaryKey
-    @AutoIncrement
-    @Column
+    @Default(uuidv4)
+    @Column(DataType.UUID)    @Column
     user_id: string;
   
     @Unique
@@ -79,6 +78,11 @@ import {
     @Default(true)
     @Column(DataType.BOOLEAN)
     is_active: boolean;
+
+    @Column(DataType.STRING)
+    access_token: string;
+    @Column(DataType.STRING)
+    refresh_token: string
   
     // @Default('User')
     // @Column(DataType.ENUM('User', 'Admin', 'Moderator'))

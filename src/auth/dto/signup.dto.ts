@@ -1,0 +1,60 @@
+import { IsString, IsEmail, IsOptional, IsEnum } from 'class-validator';
+
+export class UserDTO {
+  user_id: string;
+
+  @IsString()
+  username: string;
+
+  @IsString()
+  password_hash: string;
+
+  @IsEmail()
+  email: string;
+
+  @IsOptional()
+  @IsString()
+  first_name: string;
+
+  @IsOptional()
+  @IsString()
+  last_name: string;
+
+  @IsString()
+  date_of_birth: string;
+
+  @IsOptional()
+  @IsEnum(['Male', 'Female', 'Other'])
+  gender?: 'Male' | 'Female' | 'Other';
+
+  @IsString()
+  phone_number?: string;
+
+  @IsString()
+  address?: string;
+
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @IsOptional()
+  @IsString()
+  state?: string;
+
+  @IsOptional()
+  @IsString()
+  country?: string;
+
+  @IsOptional()
+  @IsString()
+  zip_code?: string;
+
+  @IsOptional()
+  @IsString()
+  profile_picture_url?: string;
+
+  // Uncomment if role is used
+  // @IsOptional()
+  // @IsEnum(['User', 'Admin', 'Moderator'])
+  // role?: 'User' | 'Admin' | 'Moderator';
+}
