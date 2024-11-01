@@ -1,4 +1,5 @@
 import { IsString, IsEmail, IsOptional, IsEnum } from 'class-validator';
+import { RoleEnum } from 'src/role/utility/roles.enum';
 
 export class UserDTO {
   user_id: string;
@@ -12,11 +13,9 @@ export class UserDTO {
   @IsEmail()
   email: string;
 
-  @IsOptional()
   @IsString()
   first_name: string;
 
-  @IsOptional()
   @IsString()
   last_name: string;
 
@@ -26,6 +25,10 @@ export class UserDTO {
   @IsOptional()
   @IsEnum(['Male', 'Female', 'Other'])
   gender?: 'Male' | 'Female' | 'Other';
+
+  @IsOptional()
+  @IsEnum(RoleEnum)
+  assigned_role: RoleEnum
 
   @IsString()
   phone_number?: string;
@@ -53,8 +56,4 @@ export class UserDTO {
   @IsString()
   profile_picture_url?: string;
 
-  // Uncomment if role is used
-  // @IsOptional()
-  // @IsEnum(['User', 'Admin', 'Moderator'])
-  // role?: 'User' | 'Admin' | 'Moderator';
 }

@@ -7,9 +7,11 @@ import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { User } from './user/model/User.model';
 import { authMiddleware } from './middlewares/auth/auth.middleware';
+import { RoleModule } from './role/role.module';
+import { Roles } from './role/model/roles.model';
 @Module({
   imports: [
-    ConfigModule.forRoot(), // Load .env file
+    ConfigModule.forRoot(),
     SequelizeModule.forRootAsync({
       useFactory: async () => ({
         dialect: 'mysql',
@@ -18,7 +20,7 @@ import { authMiddleware } from './middlewares/auth/auth.middleware';
         username: process.env.DB_USERNAME,
         password: process.env.DB_PASSWORD,
         database: process.env.DB_DATABASE,
-        models: [User],
+        models: [User,Roles],
         synchronize: true,
         pool:{
           max: 5,
@@ -29,7 +31,8 @@ import { authMiddleware } from './middlewares/auth/auth.middleware';
       }),
     }), 
     UserModule,
-    AuthModule
+    AuthModule,
+    RoleModule
   ],
   controllers: [AppController],
   providers: [AppService],
@@ -38,10 +41,12 @@ export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(authMiddleware)
-      .exclude({
-        path: 'auth', method: RequestMethod.ALL
-      })
-      .forRoutes('*')
+      .exclude(
+        { path: '/auth/signin', method: RequestMethod.POST },
+        { path: '/auth/signup', method: RequestMethod.POST },
+        { path: '/auth/token', method: RequestMethod.POST },
+      )
+      .forRoutes({path: '*', method: RequestMethod.ALL})
 
   }
 }
