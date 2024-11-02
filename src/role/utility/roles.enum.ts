@@ -7,4 +7,7 @@ export enum RoleEnum {
     QA = 'QA',
     ADMIN = 'ADMIN',
   }
+export enum EligbleInviteRole {
+  Inviter =  RoleEnum['ADMIN'],
+}
   
