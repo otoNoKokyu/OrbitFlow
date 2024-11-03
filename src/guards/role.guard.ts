@@ -8,13 +8,9 @@ export class RolesGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     const requiredRole = this.reflector.get<RoleEnum>('role', context.getHandler());
-    console.log(requiredRole)
     if (!requiredRole) return true
     const request = context.switchToHttp().getRequest();
     const user = request.user;
-    console.log(user)
-
-
     if (!user || !user.role) throw new ForbiddenException('Access denied: user not found or roles not defined');
     if (user.role !== requiredRole) throw new ForbiddenException('Access denied: insufficient permissions')
 
