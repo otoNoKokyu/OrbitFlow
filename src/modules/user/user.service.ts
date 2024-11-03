@@ -2,10 +2,10 @@ import { Inject, Injectable } from '@nestjs/common';
 import { User } from './model/User.model';
 import { InjectModel } from '@nestjs/sequelize';
 import { Op } from 'sequelize';
-import { Roles } from 'src/role/model/roles.model';
+import { Roles } from 'src/modules/role/model/roles.model';
 // import { RoleEnum } from 'src/role/utility/roles.enum';
-import { RoleService } from 'src/role/role.service';
-import { RoleEnum } from 'src/role/utility/roles.enum';
+import { RoleService } from 'src/modules/role/role.service';
+import { RoleEnum } from 'src/modules/role/utility/roles.enum';
 
 @Injectable()
 export class UserService {

@@ -1,5 +1,5 @@
 import { IsString, IsEmail, IsOptional, IsEnum } from 'class-validator';
-import { RoleEnum } from 'src/role/utility/roles.enum';
+import { RoleEnum } from 'src/modules/role/utility/roles.enum';
 
 export class UserDTO {
   user_id: string;

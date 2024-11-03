@@ -6,8 +6,8 @@ import { UserDTO } from './dto/signup.dto'
 import * as jwt from 'jsonwebtoken';
 import { comparePwd, hashFn } from './helper/bcrypt';
 import { Body, ConflictException, Injectable, Post, Res, UnauthorizedException } from '@nestjs/common';
-import { EligbleInviteRole, RoleEnum } from 'src/role/utility/roles.enum';
-import { ProjectService } from 'src/project/project.service';
+import { EligbleInviteRole, RoleEnum } from 'src/modules/role/utility/roles.enum';
+import { ProjectService } from 'src/modules/project/project.service';
 import { MailService } from 'src/utility/mail/mail.service';
 import { Role } from 'src/decorators/role.decorator';
 @Controller('auth')

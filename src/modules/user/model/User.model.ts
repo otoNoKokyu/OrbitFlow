@@ -12,7 +12,7 @@ import {
   ForeignKey,
   BelongsTo,
 } from 'sequelize-typescript';
-import { Roles } from 'src/role/model/roles.model';
+import { Roles } from 'src/modules/role/model/roles.model';
 import { v4 as uuidv4 } from 'uuid';
 @Table({ tableName: 'users', timestamps: true })
 export class User extends Model<User> {
