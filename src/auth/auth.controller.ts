@@ -6,14 +6,13 @@ import { UserDTO } from './dto/signup.dto'
 import * as jwt from 'jsonwebtoken';
 import { comparePwd, hashFn } from './helper/bcrypt';
 import { Body, ConflictException, Injectable, Post, Res, UnauthorizedException } from '@nestjs/common';
-import { MailerService } from '@nestjs-modules/mailer';
 import { EligbleInviteRole } from 'src/role/utility/roles.enum';
 import { ProjectService } from 'src/project/project.service';
-const fs = require('fs');
-const path = require('path');
+import { MailService } from 'src/utility/mail/mail.service';
+
 @Controller('auth')
 export class AuthController {
-    constructor(private usersService: UserService, private mailService:MailerService, private projectService:ProjectService) { }
+    constructor(private usersService: UserService, private mailService:MailService, private projectService:ProjectService) { }
 
     @Post('/signin')
     private async signIn(
@@ -92,17 +91,7 @@ export class AuthController {
         if(user.role !== EligbleInviteRole.Inviter) throw new ConflictException('action cannot be performed')
         const project = await this.projectService.findProjectById(pId)
         if(!project) throw new ConflictException('no project found')
-        const htmlTemplate = fs.readFileSync(path.join(__dirname, '../assets/email/template.html'), 'utf-8');
-        const htmlContent = htmlTemplate
-        .replace('<placeholder1>', user.username)
-        .replace('<placeholder2>', project.name);
-
-        this.mailService.sendMail({
-          from: 'OrbitFlow<Orbitflow@test.com>',
-          to: 'arko466@gmail.com',
-          subject: `Collaboration Invitation on OrbitFlow`,
-          html: htmlContent
-        });
+        this.mailService.sendEmail(user.username,project.name)
         return 'invitation sent'
       }
     }
