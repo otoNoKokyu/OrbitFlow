@@ -8,6 +8,6 @@ export enum RoleEnum {
     ADMIN = 'ADMIN',
   }
 export enum EligbleInviteRole {
-  Inviter =  RoleEnum['ADMIN'],
+  Inviter =  RoleEnum.ADMIN
 }
   

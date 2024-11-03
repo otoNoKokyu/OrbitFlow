@@ -6,10 +6,10 @@ import { UserDTO } from './dto/signup.dto'
 import * as jwt from 'jsonwebtoken';
 import { comparePwd, hashFn } from './helper/bcrypt';
 import { Body, ConflictException, Injectable, Post, Res, UnauthorizedException } from '@nestjs/common';
-import { EligbleInviteRole } from 'src/role/utility/roles.enum';
+import { EligbleInviteRole, RoleEnum } from 'src/role/utility/roles.enum';
 import { ProjectService } from 'src/project/project.service';
 import { MailService } from 'src/utility/mail/mail.service';
-
+import { Role } from 'src/decorators/role.decorator';
 @Controller('auth')
 export class AuthController {
     constructor(private usersService: UserService, private mailService:MailService, private projectService:ProjectService) { }
@@ -84,11 +84,11 @@ export class AuthController {
         return { access_token, refresh_token }
     }
     @Post('/invite')
+    @Role(EligbleInviteRole.Inviter)
     private async invite(
-        @Query() {role,pId}: {role:string,pId:string},
+        @Query() {pId}: {role:string,pId:string},
         @Req() {user}: ExpressRequest & {user:any},
     ) {
-        if(user.role !== EligbleInviteRole.Inviter) throw new ConflictException('action cannot be performed')
         const project = await this.projectService.findProjectById(pId)
         if(!project) throw new ConflictException('no project found')
         this.mailService.sendEmail(user.username,project.name)

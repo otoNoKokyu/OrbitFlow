@@ -12,6 +12,8 @@ import { Roles } from './role/model/roles.model';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { ProjectModule } from './project/project.module';
 import { Projects } from './project/entities/project.model';
+import { APP_GUARD } from '@nestjs/core';
+import { RolesGuard } from './guards/role.guard';
 @Module({
   imports: [
     ConfigModule.forRoot(),
@@ -50,7 +52,12 @@ import { Projects } from './project/entities/project.model';
     ProjectModule
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService,
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard
+    }
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
