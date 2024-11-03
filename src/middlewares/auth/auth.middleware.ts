@@ -14,8 +14,7 @@ export async function authMiddleware(req: Request & { user: any }, res: Response
             next()
         }
     } catch (e) {
-        console.log(e)
-        throw new UnauthorizedException('access denied')
+        throw new UnauthorizedException(e.message)
 
     }
 };
