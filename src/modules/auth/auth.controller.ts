@@ -18,8 +18,8 @@ export class AuthController {
     private async signIn(
         @Body() credentials: SignInDto,
     ) {
-        const { username, password } = credentials
-        const userExist = await this.usersService.findByCredential({ username });
+        const { email, password } = credentials
+        const userExist = await this.usersService.findByCredential({ email });
         if (!userExist) throw new UnauthorizedException('user not found')
         const { password_hash, role, user_id } = userExist
         const isPwdValid = await comparePwd(password_hash, password)
@@ -30,15 +30,15 @@ export class AuthController {
             },
             process.env.JWT_SECRET, { expiresIn: '1h' }
         );
-        const refreshToken = await jwt.sign({ username: userExist.username, userId: user_id, role: role.role }, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
-        await this.usersService.updateUserTokens(access_token, refreshToken, userExist.user_id)
-        return { access_token, refreshToken }
+        const refresh_token = await jwt.sign({ username: userExist.username, userId: user_id, role: role.role }, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
+        await this.usersService.updateUserTokens(access_token, refresh_token, userExist.user_id)
+        return { access_token, refresh_token }
     }
     @Post('/signUp')
     private async signUp(
         @Body() data: UserDTO,
     ) {
-        const { username, email, phone_number, first_name, assigned_role } = data
+        const { username, email, phone_number, first_name, assigned_role,projectId } = data
         const userExist = await this.usersService.findDuplicateUser({
             username,
             email,
@@ -52,10 +52,8 @@ export class AuthController {
             password_hash: hasedPwd,
             date_of_birth: new Date(data.date_of_birth)
         }
-        await this.usersService.createUser(userData, assigned_role)
-        return 'user registered'
-
-
+        const response =  await this.usersService.createUser(userData, {assigned_role, projectId })
+        return response
 
     }
 
@@ -91,8 +89,18 @@ export class AuthController {
     ) {
         const project = await this.projectService.findProjectById(pId)
         if(!project) throw new ConflictException('no project found')
+        
         this.mailService.sendEmail(user.username,project.name)
         return 'invitation sent'
       }
+    @Get('/me')
+    private async me(
+        @Req() {user}: ExpressRequest & {user:any},
+    ){
+        const me = this.usersService.findOneById(user.userId)
+        return me
+
+    }
+    
     }
 

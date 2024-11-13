@@ -14,6 +14,7 @@ import { ProjectModule } from './modules/project/project.module';
 import { Projects } from './modules/project/entities/project.model';
 import { APP_GUARD } from '@nestjs/core';
 import { RolesGuard } from './guards/role.guard';
+import { UserProject } from './modules/project/entities/userprojects.model';
 @Module({
   imports: [
     ConfigModule.forRoot(),
@@ -36,7 +37,7 @@ import { RolesGuard } from './guards/role.guard';
         username: process.env.DB_USERNAME,
         password: process.env.DB_PASSWORD,
         database: process.env.DB_DATABASE,
-        models: [User,Roles,Projects],
+        models: [User,Roles,Projects,UserProject],
         synchronize: true,
         pool:{
           max: 5,

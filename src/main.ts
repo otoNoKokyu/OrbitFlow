@@ -4,6 +4,8 @@ import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.enableCors()
+
   app.useGlobalPipes(new ValidationPipe(
     {
       whitelist: true, // Strip properties that are not in the DTO
