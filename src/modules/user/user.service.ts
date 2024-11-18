@@ -45,7 +45,7 @@ export class UserService {
         if (user.length) return true
         else return false
     }
-    async createUser(user: Partial<User>, meta: Partial<UserDTO>): Promise<User> {
+    async createUser(user: Partial<User>, meta: {assigned_role:string, projectId:string}): Promise<User> {
         const roleExists = await this.roleService.findRole(meta.assigned_role)
         if (!roleExists) throw Error('No role found')
         let userData = await User.create({ ...user, roleId: roleExists.role_id })

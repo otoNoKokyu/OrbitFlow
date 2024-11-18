@@ -13,6 +13,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
 import { ProjectModule } from './modules/project/project.module';
 import { Projects } from './modules/project/entities/project.model';
 import { APP_GUARD } from '@nestjs/core';
+import { RedisModule } from '@nestjs-modules/ioredis';
 import { RolesGuard } from './guards/role.guard';
 import { UserProject } from './modules/project/entities/userprojects.model';
 @Module({
@@ -47,6 +48,12 @@ import { UserProject } from './modules/project/entities/userprojects.model';
         },autoLoadModels:true,
       }),
     }), 
+    RedisModule.forRootAsync({
+      useFactory: async()=> ({
+        type: 'single',
+        url: 'redis://localhost:6379',
+      })
+    }),
     UserModule,
     AuthModule,
     RoleModule,
@@ -69,6 +76,7 @@ export class AppModule implements NestModule {
         { path: '/auth/signup', method: RequestMethod.POST },
         { path: '/auth/token', method: RequestMethod.POST },
         { path: '/role/create', method: RequestMethod.POST },
+        { path: '/auth/handleOtp', method: RequestMethod.POST },
       )
       .forRoutes({path: '*', method: RequestMethod.ALL})
 
