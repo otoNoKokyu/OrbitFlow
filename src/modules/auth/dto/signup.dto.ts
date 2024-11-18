@@ -1,4 +1,4 @@
-import { IsString, IsEmail, IsOptional, IsEnum, IsBoolean, ValidateIf, IsNotEmpty } from 'class-validator';
+import { IsString, IsEmail, IsOptional, IsEnum, IsBoolean, ValidateIf, IsNotEmpty, IsNumber } from 'class-validator';
 import { RoleEnum } from 'src/modules/role/utility/roles.enum';
 
 export class UserDTO {

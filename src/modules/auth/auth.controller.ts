@@ -34,6 +34,7 @@ export class AuthController {
         await this.usersService.updateUserTokens(access_token, refresh_token, userExist.user_id)
         return { access_token, refresh_token }
     }
+    
     @Post('/signUp')
     private async signUp(
         @Body() data: UserDTO,
@@ -52,8 +53,9 @@ export class AuthController {
             password_hash: hasedPwd,
             date_of_birth: new Date(data.date_of_birth)
         }
-        const response =  await this.usersService.createUser(userData, {assigned_role, projectId })
-        return response
+        // const response =  await this.usersService.createUser(userData, {assigned_role, projectId })
+        this.mailService.sendOtp(email,3456)
+        return 'verify your account'
 
     }
 
@@ -99,6 +101,15 @@ export class AuthController {
     ){
         const me = this.usersService.findOneById(user.userId)
         return me
+
+    }
+    @Post('/handleOtp')
+    private async handleOtp(
+        @Query () {type}: {type: 'verify'| 'resend'},
+        @Body() {email,otp} :{email:string , otp: number}
+    ){
+        if(type=== 'resend') return 'ok'
+        else this.mailService.sendOtp(email,otp)
 
     }
     
