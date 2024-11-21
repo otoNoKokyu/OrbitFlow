@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Req } from '@nestjs/common';
+import { Controller, Get, HttpStatus, Query, Req } from '@nestjs/common';
 import { UserService } from '../user/user.service';
 import { Request as ExpressRequest } from 'express';
 import { SignInDto } from './dto/signin.dto'
@@ -11,6 +11,7 @@ import { ProjectService } from 'src/modules/project/project.service';
 import { MailService } from 'src/utility/mail/mail.service';
 import { Role } from 'src/decorators/role.decorator';
 import { RedisService } from 'src/utility/redis/redis.service';
+import { Response } from 'express';
 
 @Controller('auth')
 export class AuthController {
@@ -40,7 +41,8 @@ export class AuthController {
 
     @Post('/signUp')
     private async signUp(
-        @Body() data: UserDTO,
+        @Res() res: Response,
+        @Body() data: UserDTO
     ) {
         const { username, email, phone_number, first_name, assigned_role, projectId } = data
         const userExist = await this.usersService.findDuplicateUser({
@@ -63,8 +65,9 @@ export class AuthController {
         } catch (err) {
             throw err
         }
-        return { expiresIn: 160 }
-
+        const newDate = new Date(new Date().getTime() + 2 * 60 * 1000);
+        const newUnixTime = Math.floor(newDate.getTime() / 1000);
+        return res.status(HttpStatus.OK).json( {email, username, expiresIn: newUnixTime });
     }
 
     @Post('/token')
@@ -127,7 +130,7 @@ export class AuthController {
         }
         else {
             if (!tempUserData) throw new ConflictException('otp expired')
-            if (otp !== tempUserData?.otp) return 'otp mismatched'
+            if (otp !== tempUserData?.otp) throw new ConflictException ('otp mismatched')
             const { assigned_role, projectId } = tempUserData
             await this.usersService.createUser(tempUserData, { assigned_role, projectId })
             this.redisSerice.dropTempData(email)
