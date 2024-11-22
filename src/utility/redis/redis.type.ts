@@ -1,3 +1,3 @@
 export enum RedisPolicy {
-    USER='user'
+    USER='user_',
 }

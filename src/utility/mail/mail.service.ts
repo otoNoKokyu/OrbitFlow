@@ -6,11 +6,12 @@ const path = require('path');
 export class MailService {
 
     constructor(private mailService: MailerService){}
-    sendEmail(name:string, title:String){
+    sendEmail(name:string, title:String, id?:string){
         const htmlTemplate = fs.readFileSync(path.join(__dirname, '../../assets/email/template.html'), 'utf-8');
         const htmlContent = htmlTemplate
         .replace('<placeholder1>', name)
-        .replace('<placeholder2>', title);
+        .replace('<placeholder2>', title)
+        .replace('<placeholder3>', id);
 
         this.mailService.sendMail({
           from: 'OrbitFlow<Orbitflow@test.com>',

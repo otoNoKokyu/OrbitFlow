@@ -8,9 +8,10 @@ import { MailService } from 'src/utility/mail/mail.service';
 import { RedisService } from 'src/utility/redis/redis.service';
 import { RedisPolicy } from 'src/utility/redis/redis.type';
 import Redis from 'ioredis';
+import { JwtService } from 'src/utility/jwt/jwt.service';
 @Module({
   imports : [UserModule,RoleModule,ProjectModule],
-  providers: [AuthService,MailService,
+  providers: [AuthService,MailService, JwtService,
     {
       provide: 'USER_POLICY',  
       useValue: RedisPolicy.USER,  

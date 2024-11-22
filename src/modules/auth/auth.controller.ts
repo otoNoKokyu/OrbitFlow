@@ -3,7 +3,6 @@ import { UserService } from '../user/user.service';
 import { Request as ExpressRequest } from 'express';
 import { SignInDto } from './dto/signin.dto'
 import { UserDTO } from './dto/signup.dto'
-import * as jwt from 'jsonwebtoken';
 import { comparePwd, hashFn } from './helper/bcrypt';
 import { Body, ConflictException, Injectable, Post, Res, UnauthorizedException } from '@nestjs/common';
 import { EligbleInviteRole, RoleEnum } from 'src/modules/role/utility/roles.enum';
@@ -12,11 +11,13 @@ import { MailService } from 'src/utility/mail/mail.service';
 import { Role } from 'src/decorators/role.decorator';
 import { RedisService } from 'src/utility/redis/redis.service';
 import { Response } from 'express';
+import { JwtService } from 'src/utility/jwt/jwt.service';
+import { JwtEncodables } from 'src/utility/utility.type';
 
 @Controller('auth')
 export class AuthController {
     constructor(private usersService: UserService, private mailService: MailService,
-        private projectService: ProjectService, private redisSerice: RedisService) {}
+        private projectService: ProjectService, private redisSerice: RedisService, private jwtService: JwtService) {}
 
     @Post('/signin')
     private async signIn(
@@ -24,17 +25,19 @@ export class AuthController {
     ) {
         const { email, password } = credentials
         const userExist = await this.usersService.findByCredential({ email });
+
         if (!userExist) throw new UnauthorizedException('user not found')
         const { password_hash, role, user_id } = userExist
+
         const isPwdValid = await comparePwd(password_hash, password)
         if (!isPwdValid) throw new UnauthorizedException('password does not match')
-        const access_token = await jwt.sign(
-            {
-                username: userExist.username, userId: user_id, role: role.role
-            },
-            process.env.JWT_SECRET, { expiresIn: '1h' }
-        );
-        const refresh_token = await jwt.sign({ username: userExist.username, userId: user_id, role: role.role }, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
+
+        const encodeBody = {username: userExist.username, userId: user_id, role: role.role}
+        const [access_token,refresh_token] = await Promise.all([
+            this.jwtService.sign(encodeBody,JwtEncodables.ACCESS_TOKEN),
+            this.jwtService.sign(encodeBody,JwtEncodables.REFRESH_TOKEN),
+            
+        ])
         await this.usersService.updateUserTokens(access_token, refresh_token, userExist.user_id)
         return { access_token, refresh_token }
     }
@@ -60,7 +63,7 @@ export class AuthController {
         }
         try {
             const otp = Math.floor(10000 + Math.random() * 90000)
-            await this.redisSerice.setTempData({ ...userData, assigned_role, projectId,otp })
+            await this.redisSerice.setTempData(userData.email,{ ...userData, assigned_role, projectId,otp })
             this.mailService.sendOtp(email, otp)
         } catch (err) {
             throw err
@@ -74,36 +77,38 @@ export class AuthController {
     private async token(
         @Body('token') token: string
     ) {
-        const isRefreshTokenValid = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
-        if (!isRefreshTokenValid) throw new UnauthorizedException('token expired.Please signin again')
-        const userInfo: any = jwt.decode(token)
-        const doesExist = await this.usersService.findOne(userInfo.userId)
-        if (!doesExist.is_active) throw new ConflictException('user not active')
-        const access_token = await jwt.sign(
-            {
-                username: userInfo.username, userId: userInfo.userId, role: userInfo.role
-            },
-            process.env.JWT_SECRET, { expiresIn: '1h' }
-        );
-        const refresh_token = await jwt.sign(
-            {
-                username: userInfo.username, userId: userInfo.userId, role: userInfo.role
-            },
-            process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
-
-        await this.usersService.updateUserTokens(access_token, refresh_token, doesExist.user_id)
-        return { access_token, refresh_token }
+        try{
+            const decoded: any = this.jwtService.verify(token,JwtEncodables.REFRESH_TOKEN)
+            const doesExist = await this.usersService.findOne(decoded.userId)
+            if (!doesExist.is_active) throw new ConflictException('user not active')
+            const encodeBody = {username: decoded.username, userId: decoded.userId, role: decoded.role}
+            const [access_token,refresh_token] = await Promise.all([
+                this.jwtService.sign(encodeBody,JwtEncodables.ACCESS_TOKEN),
+                this.jwtService.sign(encodeBody,JwtEncodables.REFRESH_TOKEN),
+            ])
+            await this.usersService.updateUserTokens(access_token, refresh_token, doesExist.user_id)
+            return { access_token, refresh_token }
+        }catch(err){
+            throw new UnauthorizedException(err)
+        }
     }
     @Post('/invite')
     @Role(EligbleInviteRole.Inviter)
     private async invite(
-        @Query() { pId }: { role: string, pId: string },
+        @Query() { role, pId }: { role: string, pId: string },
         @Req() { user }: ExpressRequest & { user: any },
     ) {
         const project = await this.projectService.findProjectById(pId)
         if (!project) throw new ConflictException('no project found')
+        const encodeBody = {
+            role,
+            pId,
+            inviteeId: user.userId
+        }
+        const secretInvitationId = await this.jwtService.sign(encodeBody, JwtEncodables.INVITE)
+        this.redisSerice.setTempData('role',secretInvitationId)
 
-        this.mailService.sendEmail(user.username, project.name)
+        this.mailService.sendEmail(user.username, project.name,secretInvitationId)
         return 'invitation sent'
     }
     @Get('/me')
@@ -124,7 +129,7 @@ export class AuthController {
         if (type === 'resend') {
             const resendOtp = Math.floor(10000 + Math.random() * 90000)
             const expiresIn = 160
-            await this.redisSerice.setTempData({ ...tempUserData, otp: resendOtp })
+            await this.redisSerice.setTempData('user',{ ...tempUserData, otp: resendOtp })
             this.mailService.sendOtp(email, resendOtp)
             return { expiresIn }
         }
