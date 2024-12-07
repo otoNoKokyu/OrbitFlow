@@ -6,7 +6,13 @@ import * as jwt from 'jsonwebtoken'
 export async function authMiddleware(req: Request & { user: any }, res: Response, next: NextFunction) {
 
     const authToken = req.headers['authorization']?.split(' ')[1]
-    if (!authToken) throw new UnauthorizedException('access denied.token not found');
+    if (!authToken) throw new UnauthorizedException({
+        statusCode: 401,
+        message: 'Access denied: Token not found',
+        data: null,
+        cached: false,
+        timestamp: new Date().toISOString(),
+      });
     try {
         const data = jwt.verify(authToken, process.env.JWT_SECRET)
         if (data) {
@@ -14,7 +20,13 @@ export async function authMiddleware(req: Request & { user: any }, res: Response
             next()
         }
     } catch (e) {
-        throw new UnauthorizedException(e.message)
+        throw  new UnauthorizedException({
+            statusCode: 401,
+            message: e.message,
+            data: null,
+            cached: false,
+            timestamp: new Date().toISOString(),
+          });
 
     }
 };

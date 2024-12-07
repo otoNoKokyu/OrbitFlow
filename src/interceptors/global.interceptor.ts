@@ -13,19 +13,24 @@ export class Interceptor<T> implements NestInterceptor<T, IResponse<T>> {
     intercept(context: ExecutionContext, next: CallHandler): Observable<IResponse<T> | any> {
         return next.handle().pipe(
             map((data) => {
-                return {
-                    statusCode: context.switchToHttp().getResponse().statusCode,
-                    message: 'Request was successful',
-                    data: data,
+                const returnObj:any = {
                     cached: false,
                     timestamp: new Date().toISOString(),
                 }
+                if (typeof data === 'string'){
+                    returnObj.data = null
+                    returnObj.message = data
+                }else{
+                    returnObj.message = data.message??null;
+                    returnObj.data = data
+                }
+                return returnObj
             }
             ),
             catchError((err: HttpException) => {
-                const { message, statusCode } = err.getResponse() as IErrResponse
+                console.log(err)
+                const { message } = err.getResponse() as IErrResponse
                 const customError = {
-                    statusCode,
                     message,
                     data: null,
                     cached: false,
