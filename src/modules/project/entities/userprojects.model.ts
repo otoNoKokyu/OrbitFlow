@@ -4,7 +4,7 @@ import { User } from 'src/modules/user/model/User.model';
 import { Roles } from 'src/modules/role/model/roles.model';
 
 @Table({
-  tableName: 'userProjects',
+  tableName: 'user_projects',
   timestamps: false,
 })
 export class UserProject extends Model<UserProject> {

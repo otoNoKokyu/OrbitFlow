@@ -31,18 +31,18 @@ export class AuthController {
         const isPwdValid = await comparePwd(password_hash, password)
         if (!isPwdValid) throw new UnauthorizedException('password does not match')
 
-        const encodeBody = { username: userExist.username, userId: user_id, role: role.role }
+        const encodeBody = { userId: user_id, role: role.role }
         const [access_token, refresh_token] = await Promise.all([
             this.jwtService.sign(encodeBody, JwtEncodables.ACCESS_TOKEN),
             this.jwtService.sign(encodeBody, JwtEncodables.REFRESH_TOKEN),
 
         ])
         await this.usersService.updateUserTokens(access_token, refresh_token, userExist.user_id)
-        return { access_token, refresh_token }
+        return { username: userExist.username, access_token, refresh_token }
     }
 
     @Post('/signUp')
-    @HttpCode(200) 
+    @HttpCode(200)
     private async signUp(
         @Body() data: UserDTO
     ) {
@@ -60,20 +60,21 @@ export class AuthController {
             password_hash: hasedPwd,
             date_of_birth: new Date(data.date_of_birth)
         }
-        try {
-            const otpMeta = await this.sendOtp({
-                user: userData,
-                email: userData.email,
-                resend: false
-            })
-            return { email, username, expiresIn: otpMeta.expiresIn };
-        } catch (err) {
-            throw err
+        if (projectId && assigned_role) {
+            userData.projectId = projectId
+            userData.assigned_role = assigned_role
         }
+        const otpMeta = await this.sendOtp({
+            user: userData,
+            email: userData.email,
+            resend: false
+        })
+        return { email, username, expiresIn: otpMeta.expiresIn };
+
     }
 
     @Post('/sendOtp')
-    @HttpCode(200) 
+    @HttpCode(200)
     public async sendOtp(
         @Body() { resend, user, email }: { resend: boolean, user?: UserDTO, email: string }
     ) {
@@ -87,11 +88,11 @@ export class AuthController {
 
         } else await this.redisSerice.setTempData(user.email, { ...user, otp: resendOtp, otpExpiresAt: newUnixTime }, 1800)
 
-        this.mailService.sendOtp(email, resendOtp)
+        await this.mailService.sendOtp(email, resendOtp)
         return { expiresIn: newUnixTime }
     }
     @Post('/token')
-    @HttpCode(200) 
+    @HttpCode(200)
     private async token(
         @Body('token') token: string
     ) {
@@ -99,13 +100,13 @@ export class AuthController {
             const decoded: any = this.jwtService.verify(token, JwtEncodables.REFRESH_TOKEN)
             const doesExist = await this.usersService.findOne(decoded.userId)
             if (!doesExist.is_active) throw new ConflictException('user not active')
-            const encodeBody = { username: decoded.username, userId: decoded.userId, role: decoded.role }
+            const encodeBody = { userId: decoded.userId, role: decoded.role }
             const [access_token, refresh_token] = await Promise.all([
                 this.jwtService.sign(encodeBody, JwtEncodables.ACCESS_TOKEN),
                 this.jwtService.sign(encodeBody, JwtEncodables.REFRESH_TOKEN),
             ])
             await this.usersService.updateUserTokens(access_token, refresh_token, doesExist.user_id)
-            return { access_token, refresh_token }
+            return { username: doesExist.username, access_token, refresh_token }
         } catch (err) {
             throw new UnauthorizedException(err)
         }
@@ -115,7 +116,7 @@ export class AuthController {
     @Role(EligbleInviteRole.Inviter)
     private async invite(
         @Query() { role, pId }: { role: string, pId: string },
-        @Req() { user, body:{email} }: ExpressRequest & { user: any },
+        @Req() { user, body: { email } }: ExpressRequest & { user: any },
     ) {
         const project = await this.projectService.findProjectById(pId)
         if (!project) throw new ConflictException('no project found')
@@ -148,7 +149,6 @@ export class AuthController {
         if (otp !== tempUserData?.otp) throw new ConflictException('otp mismatched')
 
         const { assigned_role, projectId } = tempUserData
-        console.log(tempUserData)
 
         if (assigned_role && projectId) await this.usersService.createUser(tempUserData, { assigned_role, projectId })
         else await this.usersService.createUser(tempUserData)

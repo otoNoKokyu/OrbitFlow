@@ -1,4 +1,4 @@
-import { Module, Scope } from '@nestjs/common';
+import { MiddlewareConsumer, Module, Scope } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { UserModule } from 'src/modules/user/user.module';
@@ -9,6 +9,7 @@ import { RedisService } from 'src/utility/redis/redis.service';
 import { RedisPolicy } from 'src/utility/redis/redis.type';
 import Redis from 'ioredis';
 import { JwtService } from 'src/utility/jwt/jwt.service';
+import { verifyMiddleware } from 'src/middlewares/auth/invite.middleware';
 @Module({
   imports : [UserModule,RoleModule,ProjectModule],
   providers: [AuthService,MailService, JwtService,
@@ -25,4 +26,10 @@ import { JwtService } from 'src/utility/jwt/jwt.service';
   ],
   controllers: [AuthController]
 })
-export class AuthModule {}
+export class AuthModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(verifyMiddleware)
+      .forRoutes('auth/signup');
+  }
+}

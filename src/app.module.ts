@@ -45,7 +45,8 @@ import { UserProject } from './modules/project/entities/userprojects.model';
           min: 0,
           acquire: 30000,
           idle: 10000
-        },autoLoadModels:true,
+        },
+        autoLoadModels:true,
       }),
     }), 
     RedisModule.forRootAsync({
@@ -76,7 +77,8 @@ export class AppModule implements NestModule {
         { path: '/auth/signup', method: RequestMethod.POST },
         { path: '/auth/token', method: RequestMethod.POST },
         { path: '/role/create', method: RequestMethod.POST },
-        { path: '/auth/handleOtp', method: RequestMethod.POST },
+        { path: '/auth/verify', method: RequestMethod.POST },
+        { path: '/auth/sendOtp', method: RequestMethod.POST },
       )
       .forRoutes({path: '*', method: RequestMethod.ALL})
 

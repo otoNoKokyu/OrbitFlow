@@ -6,14 +6,15 @@ import { RedisPolicy } from './redis.type';
 export class RedisService {
 
     private policy= null;
-    constructor( @InjectRedis() private readonly redis: Redis = redis, policy: RedisPolicy){
+    constructor( private readonly redis: Redis, policy: RedisPolicy){
         this.policy = `${policy}_`
     }
-    async setTempData (key:string, data: any){
+    async setTempData (key:string, data: any,expiry?:number){
         try{
             const doesExist = await this.getTempData(`${this.policy}${key}`)
             if(doesExist) throw Error("data exists in cache")
-            await this.redis.set(`${this.policy}${key}`, JSON.stringify(data),'EX', 160)
+            if(expiry) await this.redis.set(`${this.policy}${key}`, JSON.stringify(data),'EX', expiry)
+            else await this.redis.set(`${this.policy}${key}`, JSON.stringify(data),)
         }catch(err){
             if(err) throw err
         }

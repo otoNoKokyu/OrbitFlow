@@ -6,7 +6,9 @@ import { SequelizeModule } from '@nestjs/sequelize/dist/sequelize.module';
 import { UserProject } from './entities/userprojects.model';
 
 @Module({
-  imports:[SequelizeModule.forFeature([Projects,UserProject])],
+  imports:[
+    SequelizeModule.forFeature([Projects,UserProject])
+],
   controllers: [ProjectController],
   providers: [ProjectService],
   exports: [ProjectService]

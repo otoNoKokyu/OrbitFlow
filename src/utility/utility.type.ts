@@ -4,7 +4,7 @@ export enum JwtEncodables {
     INVITE = 'JWT_INVITE_SECRET'
 }
 export enum JwtEncodableExpiry{
-    ACCESS_TOKEN =  '1h',
-    REFRESH_TOKEN = '7d',
-    INVITE = 60
+    arko =  '1d',
+    cholbe = '7d',
+    hello = '1d'
 }

@@ -15,11 +15,6 @@ export class ProjectService {
 
   async findProjectById(id: string): Promise<Projects> {
     const project = await Projects.findOne({ where: { id }, attributes:['name'] });
-
-    if (!project) {
-      throw new NotFoundException(`Project with ID ${id} not found`);
-    }
-
     return project;
   }
 

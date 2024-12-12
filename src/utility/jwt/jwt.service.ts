@@ -13,7 +13,7 @@ export class JwtService {
             return  await sign(
                 data,
                 inferedPolicy,
-                JwtEncodableExpiry[inferedPolicy]
+                {expiresIn:JwtEncodableExpiry[inferedPolicy]}
             );
         } catch (error) {
             console.error('Token signing failed:', error.message);
@@ -21,7 +21,7 @@ export class JwtService {
         }      
 
     }
-    public verify(token: string, policy: JwtEncodables): string | JwtPayload {
+    public verify(token: string, policy: JwtEncodables): string | JwtPayload| any {
         try {
             const secret = process.env[policy];
             if (!secret) throw new Error(`Environment variable ${policy} is not defined.`);

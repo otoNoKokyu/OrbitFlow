@@ -1,6 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { User } from './model/User.model';
-import { InjectModel } from '@nestjs/sequelize';
 import { Op, Sequelize } from 'sequelize';
 import { Roles } from 'src/modules/role/model/roles.model';
 // import { RoleEnum } from 'src/role/utility/roles.enum';
@@ -45,11 +44,21 @@ export class UserService {
         if (user.length) return true
         else return false
     }
-    async createUser(user: Partial<User>, meta: {assigned_role:string, projectId:string}): Promise<User> {
-        const roleExists = await this.roleService.findRole(meta.assigned_role)
+    async createUser(user: Partial<UserDTO>, meta?: {assigned_role:string, projectId:string}): Promise<User> {
+        const roleExists = await this.roleService.findRole(meta?.assigned_role || user?.assigned_role)
         if (!roleExists) throw Error('No role found')
-        let userData = await User.create({ ...user, roleId: roleExists.role_id })
-        if (user.isInvited) {
+        delete user.assigned_role
+        const dob = new Date(user.date_of_birth)
+        delete user.date_of_birth
+        let userData
+        try{
+             userData = await User.create({ ...user, roleId: roleExists.role_id, date_of_birth:dob })
+
+        }catch(err){
+            console.log(err)
+
+        }
+        if (meta) {
             await this.projectService.createUserProject({
                 userId: userData.user_id,
                 roleId: userData.roleId,

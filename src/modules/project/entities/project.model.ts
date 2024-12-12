@@ -1,7 +1,7 @@
 import { Table, Column, Model, DataType, ForeignKey } from 'sequelize-typescript';
 // import { Sprints } from './sprint.model'; // Adjust the import based on your project structure
 import { User } from 'src/modules/user/model/User.model';
-@Table({ tableName: 'Projects' })
+@Table({ tableName: 'projects' })
 export class Projects extends Model<Projects> {
   @Column({
     type: DataType.CHAR(36),

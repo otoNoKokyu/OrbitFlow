@@ -20,7 +20,7 @@ export class UserDTO {
   last_name: string;
 
   @IsString()
-  date_of_birth: string;
+  date_of_birth: string| Date;
 
   @IsOptional()
   @IsEnum(['Male', 'Female', 'Other'])

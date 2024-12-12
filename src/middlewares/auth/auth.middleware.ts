@@ -2,6 +2,8 @@
 import { UnauthorizedException } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import * as jwt from 'jsonwebtoken'
+import { JwtService } from 'src/utility/jwt/jwt.service';
+import { JwtEncodables } from 'src/utility/utility.type';
 
 export async function authMiddleware(req: Request & { user: any }, res: Response, next: NextFunction) {
 
@@ -13,8 +15,9 @@ export async function authMiddleware(req: Request & { user: any }, res: Response
         cached: false,
         timestamp: new Date().toISOString(),
       });
+    const jwtService = new JwtService()
     try {
-        const data = jwt.verify(authToken, process.env.JWT_SECRET)
+        const data = jwtService.verify(authToken, JwtEncodables.ACCESS_TOKEN)
         if (data) {
             req.user = data
             next()
