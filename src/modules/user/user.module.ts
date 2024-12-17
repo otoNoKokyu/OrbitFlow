@@ -5,13 +5,15 @@ import { SequelizeModule } from '@nestjs/sequelize';
 import { UserController } from './user.controller';
 import { RoleModule } from 'src/modules/role/role.module';
 import { ProjectService } from '../project/project.service';
+import { RolesGuard } from 'src/guards/role.guard';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
     SequelizeModule.forFeature([User]),
     RoleModule
   ],
-  providers: [UserService,ProjectService],
+  providers: [UserService,ProjectService, {provide: APP_GUARD, useClass: RolesGuard}],
   exports: [UserService],
   controllers: [UserController]
 })

@@ -12,11 +12,18 @@ import { Role } from 'src/decorators/role.decorator';
 import { RedisService } from 'src/utility/redis/redis.service';
 import { JwtService } from 'src/utility/jwt/jwt.service';
 import { JwtEncodables } from 'src/utility/utility.type';
+import { AuthService } from './auth.service';
 
 @Controller('auth')
 export class AuthController {
-    constructor(private usersService: UserService, private mailService: MailService,
-        private projectService: ProjectService, private redisSerice: RedisService, private jwtService: JwtService) { }
+    constructor(
+        private usersService: UserService,
+        private mailService: MailService,
+        private projectService: ProjectService,
+        private redisSerice: RedisService,
+        private jwtService: JwtService,
+        private authService: AuthService
+    ) { }
 
     @Post('/signin')
     private async signIn(
@@ -58,7 +65,6 @@ export class AuthController {
         const userData = {
             ...data,
             password_hash: hasedPwd,
-            date_of_birth: new Date(data.date_of_birth)
         }
         if (projectId && assigned_role) {
             userData.projectId = projectId
@@ -78,18 +84,8 @@ export class AuthController {
     public async sendOtp(
         @Body() { resend, user, email }: { resend: boolean, user?: UserDTO, email: string }
     ) {
-        const resendOtp = Math.floor(10000 + Math.random() * 90000)
-        const newDate = new Date(new Date().getTime() + 2 * 60 * 1000);
-        const newUnixTime = Math.floor(newDate.getTime() / 1000);
-        if (resend) {
-            const doesExist = await this.redisSerice.getTempData(email)
-            if (!doesExist) throw new ConflictException('profile not found')
-            await this.redisSerice.setTempData(email, { ...doesExist, otp: resendOtp, otpExpiresAt: newUnixTime }, 1800)
-
-        } else await this.redisSerice.setTempData(user.email, { ...user, otp: resendOtp, otpExpiresAt: newUnixTime }, 1800)
-
-        await this.mailService.sendOtp(email, resendOtp)
-        return { expiresIn: newUnixTime }
+        const expiresIn = await this.authService.sendOTP(resend, email, user);
+        return expiresIn;
     }
     @Post('/token')
     @HttpCode(200)
@@ -126,33 +122,14 @@ export class AuthController {
             inviterId: user.userId
         }
         const secretInvitationId = await this.jwtService.sign(encodeBody, JwtEncodables.INVITE)
-        this.mailService.sendEmail(user.username, project.name, email, secretInvitationId)
+        this.mailService.sendEmail(user.username, project.name, secretInvitationId)
         return 'invitation sent'
-    }
-    @Get('/me')
-    private async me(
-        @Req() { user }: ExpressRequest & { user: any },
-    ) {
-        const me = this.usersService.findOneById(user.userId)
-        return me
     }
     @Post('/verify')
     private async handleOtp(
         @Body() { email, otp }: { email: string, otp: number }
     ) {
-        const tempUserData = await this.redisSerice.getTempData(email)
-        if (!tempUserData) throw new ConflictException('data not found')
-
-        const currentUnixTime = Math.floor(Date.now() / 1000)
-        if (Math.abs(currentUnixTime - tempUserData.otpExpiresAt) > 300) throw new ConflictException('otp expired')
-
-        if (otp !== tempUserData?.otp) throw new ConflictException('otp mismatched')
-
-        const { assigned_role, projectId } = tempUserData
-
-        if (assigned_role && projectId) await this.usersService.createUser(tempUserData, { assigned_role, projectId })
-        else await this.usersService.createUser(tempUserData)
-        return 'user registered'
+        await this.authService.verfiy(email, otp);
     }
 }
 

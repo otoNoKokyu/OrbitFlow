@@ -1,13 +1,16 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { RoleEnum } from 'src/modules/role/utility/roles.enum';
+import { EligbleInviteRole, RoleEnum } from 'src/modules/role/utility/roles.enum';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const requiredRole = this.reflector.get<RoleEnum>('role', context.getHandler());
+    const requiredRole = this.reflector.getAllAndOverride<RoleEnum[]>('role', [
+      context.getHandler(),
+      context.getClass()
+    ]);
     if (!requiredRole) return true
     const request = context.switchToHttp().getRequest();
     const user = request.user;
@@ -27,6 +30,6 @@ export class RolesGuard implements CanActivate {
     //   timestamp: new Date().toISOString(),
     // });
 
-    return true;
+    return requiredRole.some((role) => user?.roles?.includes(role));
   }
 }
