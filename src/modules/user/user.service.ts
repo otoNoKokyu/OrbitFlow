@@ -8,6 +8,8 @@ import { ProjectService } from '../project/project.service';
 import { UUID } from 'crypto';
 import { CredentialInfo, EditUserDto, PersonalInfo } from './dto/edit.user.profile.dto';
 import { isEmail } from 'class-validator';
+import { HttpService } from '@nestjs/axios';
+import { emit } from 'process';
 
 @Injectable()
 export class UserService {
@@ -18,7 +20,8 @@ export class UserService {
         @Inject(ProjectService)
         @Inject(Sequelize) private readonly sequelize: Sequelize,
         private roleService: RoleService,
-        private projectService: ProjectService
+        private projectService: ProjectService,
+        private httpService: HttpService
     ) { }
 
     async findOne(id: string): Promise<User | null> {
@@ -84,35 +87,35 @@ export class UserService {
         );
     }
 
-    async validateEmailUpdate(payload: Partial<CredentialInfo>) {
+    async validateEmailUpdate(payload: {info: Partial<CredentialInfo>, model: UserDTO}) {
         try {
-            if(!isEmail(payload.email)) return 'invalid email';// throw new BadRequestException('Invaild email format!');
-            const userWithSameEmail = await User.findOne({where: {email: payload.email}});
-            if(userWithSameEmail) return 'user with same email already exists!';
-            return '';
+            if(!isEmail(payload.info.email)) return new Error ('invalid email');
+            const userWithSameEmail = await User.findOne({where: {email: payload.info.email}});
+            if(userWithSameEmail) return new Error('user with same email already exists!');
+            this.httpService.post('/auth/sendOTP', {resend: false, user:  payload.model, eamil: payload.info.email});
         } catch (err) {
             throw Error(err);
         }
     }
 
-    async updateUserEmail(payload: {email: string, userId: string}) {
+    async updateUserEmail(payload: UserDTO) {
         try {
-            const user = await User.findOne({where: {user_id: payload.userId}});
-            if(!user) throw new NotFoundException('user is not found!');
+            const user = await User.findOne({where: {user_id: payload.user_id}});
+            if(!user) throw Error('user not found!');
+            this.validateEmailUpdate({info: {email: payload.email}, model: payload});
             await user.update({email: payload.email});
         } catch {
-            throw new BadRequestException();
+            throw new Error();
         }
     }
 
     async editUserProfile(payload: UserDTO) : Promise<void> {
         try {
-            const user = await User.findOne({where: {user_id: payload.user_id}});
-            if(!user) throw new NotFoundException('user not found!');
+            this.updateUserEmail(payload);
             const updatedPersonalInfo : PersonalInfo = {...payload, date_of_birth: new Date(payload.date_of_birth)};
-            await user.update(updatedPersonalInfo);
+            await User.update(updatedPersonalInfo, {where: {user_id: payload.user_id}});
         } catch {
-            throw new BadRequestException();
+            throw new Error();
         }
     }
 }

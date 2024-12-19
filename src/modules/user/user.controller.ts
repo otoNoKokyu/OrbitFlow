@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Patch, Put, Req, Res } from '@nestjs/common';
+import { BadRequestException, Body, ConflictException, Controller, Get, HttpCode, NotFoundException, Patch, Put, Req, Res } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UserDTO } from '../auth/dto/signup.dto';
 import { Response } from 'express';
@@ -16,13 +16,14 @@ export class UserController {
     @Put('/editProfile')
     @HttpCode(200)
     public async editUserProfile(@Body() user: UserDTO) {
-        await this._userService.editUserProfile(user);
-    }
-    @Patch('/update-email')
-    @Role([RoleEnum.ADMIN])
-    public async updateUserEmail(@Body() body: {email: string, userId: string}, @Res() res : Response) {
-        const isValid = await this._userService.validateEmailUpdate({email: body.email});
-        // if(isValid) res.redirect(302, '/auth/sendOtp');
-        await this._userService.updateUserEmail(body);
+        try {
+            await this._userService.editUserProfile(user);
+        }catch(err) {
+            if (err.message === 'user with same email already exists!') 
+                throw new NotFoundException(err.message);
+            if(err.message === 'user not found!') 
+                throw new NotFoundException(err.message);
+            throw new BadRequestException('Invalid data!');
+        }
     }
 }
