@@ -10,6 +10,7 @@ import { CredentialInfo, EditUserDto, PersonalInfo } from './dto/edit.user.profi
 import { isEmail } from 'class-validator';
 import { HttpService } from '@nestjs/axios';
 import { emit } from 'process';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class UserService {
@@ -92,7 +93,7 @@ export class UserService {
             if(!isEmail(payload.info.email)) return new Error ('invalid email');
             const userWithSameEmail = await User.findOne({where: {email: payload.info.email}});
             if(userWithSameEmail) return new Error('user with same email already exists!');
-            this.httpService.post('/auth/sendOTP', {resend: false, user:  payload.model, eamil: payload.info.email});
+            await firstValueFrom(this.httpService.post('/auth/sendOTP', {resend: false, user:  payload.model, eamil: payload.info.email}));
         } catch (err) {
             throw Error(err);
         }
