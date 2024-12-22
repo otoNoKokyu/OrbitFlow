@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {Inject, Injectable } from '@nestjs/common';
 import { User } from './model/User.model';
 import { Op, Sequelize } from 'sequelize';
 import { Roles } from 'src/modules/role/model/roles.model';
@@ -6,11 +6,8 @@ import { RoleService } from 'src/modules/role/role.service';
 import { UserDTO } from '../auth/dto/signup.dto';
 import { ProjectService } from '../project/project.service';
 import { UUID } from 'crypto';
-import { CredentialInfo, EditUserDto, PersonalInfo } from './dto/edit.user.profile.dto';
+import { CredentialInfo, PersonalInfo } from './dto/edit.user.profile.dto';
 import { isEmail } from 'class-validator';
-import { HttpService } from '@nestjs/axios';
-import { emit } from 'process';
-import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class UserService {
@@ -22,7 +19,6 @@ export class UserService {
         @Inject(Sequelize) private readonly sequelize: Sequelize,
         private roleService: RoleService,
         private projectService: ProjectService,
-        private httpService: HttpService
     ) { }
 
     async findOne(id: string): Promise<User | null> {
@@ -91,9 +87,8 @@ export class UserService {
     async validateEmailUpdate(payload: {info: Partial<CredentialInfo>, model: UserDTO}) {
         try {
             if(!isEmail(payload.info.email)) return new Error ('invalid email');
-            const userWithSameEmail = await User.findOne({where: {email: payload.info.email}});
-            if(userWithSameEmail) return new Error('user with same email already exists!');
-            await firstValueFrom(this.httpService.post('/auth/sendOTP', {resend: false, user:  payload.model, eamil: payload.info.email}));
+            const existedUser = await User.findOne({where: {email: payload.info.email}});
+            if(existedUser) return new Error('user with same email already exists!');
         } catch (err) {
             throw Error(err);
         }
@@ -101,12 +96,12 @@ export class UserService {
 
     async updateUserEmail(payload: UserDTO) {
         try {
-            const user = await User.findOne({where: {user_id: payload.user_id}});
+            const user = await User.findOne({where: {user_id: payload.user_id, is_active: true}});  
             if(!user) throw Error('user not found!');
             this.validateEmailUpdate({info: {email: payload.email}, model: payload});
             await user.update({email: payload.email});
-        } catch {
-            throw new Error();
+        } catch (err){
+            throw new Error(err);
         }
     }
 

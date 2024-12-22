@@ -1,7 +1,6 @@
 import { BadRequestException, Body, ConflictException, Controller, Get, HttpCode, NotFoundException, Patch, Put, Req, Res } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UserDTO } from '../auth/dto/signup.dto';
-import { Response } from 'express';
 import { Role } from 'src/decorators/role.decorator';
 import { RoleEnum } from '../role/utility/roles.enum';
 
@@ -15,9 +14,11 @@ export class UserController {
     }
     @Put('/editProfile')
     @HttpCode(200)
+    @Role([RoleEnum.ADMIN])
     public async editUserProfile(@Body() user: UserDTO) {
         try {
             await this._userService.editUserProfile(user);
+            return 'user updated successfully';
         }catch(err) {
             if (err.message === 'user with same email already exists!') 
                 throw new NotFoundException(err.message);
