@@ -31,11 +31,6 @@ export class Interceptor<T> implements NestInterceptor<T, IResponse<T>> {
         const { message} = error.getResponse() as IResponse<any>;
         throw new HttpException({ message, cached: false, timestamp: new Date().toISOString() }, error.getStatus());
       }
-      throw new HttpException({
-        message: 'Internal Server Error',
-        cached: false,
-        timestamp: new Date().toISOString(),
-        data: null,
-      }, 500);
+      throw error
     }
   }
