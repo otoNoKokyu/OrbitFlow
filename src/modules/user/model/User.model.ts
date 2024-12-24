@@ -102,5 +102,12 @@ export class User extends Model<User> {
 })
 isInvited: boolean;
 
+@Column({
+  type: DataType.BOOLEAN,
+  allowNull: true,
+  defaultValue: null,
+})
+invited_by: string | null;
+
 }
 

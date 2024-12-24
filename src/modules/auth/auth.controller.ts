@@ -47,18 +47,18 @@ export class AuthController {
         await this.usersService.updateUserTokens(access_token, refresh_token, userExist.user_id)
         return { username: userExist.username, access_token, refresh_token }
     }
-
     @Post('/signUp')
     @HttpCode(200)
     private async signUp(
         @Body() data: UserDTO
     ) {
-        const { username, email, phone_number, first_name, projectId, assigned_role } = data
+        const { username, email, phone_number, first_name, projectId, assigned_role, invited_by } = data
         const userExist = await this.usersService.findDuplicateUser({
             username,
             email,
             phone_number,
             first_name,
+            invited_by
         });
         if (userExist) throw new ConflictException('user already exists')
         const hasedPwd = await hashFn(data.password_hash);
@@ -66,26 +66,28 @@ export class AuthController {
             ...data,
             password_hash: hasedPwd,
         }
-        if (projectId && assigned_role) {
-            userData.projectId = projectId
-            userData.assigned_role = assigned_role
-        }
-        const otpMeta = await this.sendOtp({
-            user: userData,
-            email: userData.email,
-            resend: false
-        })
-        return { email, username, expiresIn: otpMeta.expiresIn };
+        if (assigned_role && projectId) await this.usersService.createUser(userData, { assigned_role, projectId })
+        else await this.usersService.createUser(userData)
+        return 'user registered'
 
     }
-
     @Post('/sendOtp')
     @HttpCode(200)
     public async sendOtp(
-        @Body() { resend, user, email }: { resend: boolean, user?: UserDTO, email: string }
+        @Body() { resend, email }: { resend: boolean,  email: string }
     ) {
-        const expiresIn = await this.authService.sendOTP(resend, email, user);
-        return expiresIn;
+        const resendOtp = Math.floor(10000 + Math.random() * 90000)
+        const newDate = new Date(new Date().getTime() + 2 * 60 * 1000);
+        const newUnixTime = Math.floor(newDate.getTime() / 1000);
+        if (resend) {
+            const doesExist = await this.redisSerice.getTempData(email)
+            if (!doesExist) throw new ConflictException('profile not found')
+            await this.redisSerice.setTempData(email, { ...doesExist, otp: resendOtp, otpExpiresAt: newUnixTime }, 1800)
+
+        } else await this.redisSerice.setTempData(email, { otp: resendOtp, otpExpiresAt: newUnixTime }, 1800)
+
+        await this.mailService.sendOtp(email, resendOtp)
+        return { expiresIn: newUnixTime }
     }
     @Post('/token')
     @HttpCode(200)
@@ -112,7 +114,7 @@ export class AuthController {
     @Role(EligbleInviteRole.Inviter)
     private async invite(
         @Query() { role, pId }: { role: string, pId: string },
-        @Req() { user, body: { email } }: ExpressRequest & { user: any },
+        @Req() { user, body: { email} }: ExpressRequest & { user: any },
     ) {
         const project = await this.projectService.findProjectById(pId)
         if (!project) throw new ConflictException('no project found')
@@ -129,7 +131,13 @@ export class AuthController {
     private async handleOtp(
         @Body() { email, otp }: { email: string, otp: number }
     ) {
-        await this.authService.verfiy(email, otp);
+        const tempUserData = await this.redisSerice.getTempData(email)
+        if (!tempUserData) throw new ConflictException('data not found')
+        const currentUnixTime = Math.floor(Date.now() / 1000)
+        if (Math.abs(currentUnixTime - tempUserData.otpExpiresAt) > 300) throw new ConflictException('otp expired')
+        if (otp !== tempUserData?.otp) throw new ConflictException('otp mismatched')
+        return 'otp verified';   
     }
+
 }
 

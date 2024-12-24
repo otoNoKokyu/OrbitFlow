@@ -62,5 +62,8 @@ export class UserDTO {
   @ValidateIf(o => o.isInvited === true)
   @IsNotEmpty()
   projectId: string;
+  
+  @IsString()
+  invited_by: string
 
 }
