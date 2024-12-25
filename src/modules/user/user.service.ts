@@ -9,6 +9,12 @@ import { UUID } from 'crypto';
 import { CredentialInfo, PersonalInfo } from './dto/edit.user.profile.dto';
 import { isEmail } from 'class-validator';
 
+export const usersProviders = [
+    {
+      provide: 'USER_REPOSITORY',
+      useValue: User,
+    },
+  ];
 @Injectable()
 export class UserService {
 
@@ -17,6 +23,8 @@ export class UserService {
         @Inject(RoleService)
         @Inject(ProjectService)
         @Inject(Sequelize) private readonly sequelize: Sequelize,
+        @Inject('USER_REPOSITORY')
+        private readonly userRepository : typeof User,
         private roleService: RoleService,
         private projectService: ProjectService,
     ) { }
@@ -51,7 +59,7 @@ export class UserService {
         delete user.date_of_birth
         let userData
         try{
-             userData = await User.create({ ...user, roleId: roleExists.role_id, date_of_birth:dob })
+             userData = await this.userRepository.create({ ...user, roleId: roleExists.role_id, date_of_birth:dob })
 
         }catch(err){
             console.log(err)
