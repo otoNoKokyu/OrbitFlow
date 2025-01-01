@@ -1,13 +1,19 @@
 import {
+  BadRequestException,
     CallHandler,
+    ConflictException,
     ExecutionContext,
+    ForbiddenException,
     HttpException,
+    HttpStatus,
     Injectable,
     NestInterceptor,
+    UnauthorizedException,
 } from '@nestjs/common';
 import { Observable, catchError, map, throwError } from 'rxjs';
-import  { IErrResponse, IResponse } from 'src/interface/Response';
-
+import { ServiceException } from 'src/helper/CustomError';
+import { ERR_TYPE } from 'src/interface/CustomError';
+import  { IResponse } from 'src/interface/Response';
 export class Interceptor<T> implements NestInterceptor<T, IResponse<T>> {
     intercept(context: ExecutionContext, next: CallHandler): Observable<IResponse<T>> {
       return next.handle().pipe(
@@ -15,7 +21,6 @@ export class Interceptor<T> implements NestInterceptor<T, IResponse<T>> {
         catchError((error) => this.handleError(error))
       );
     }
-  
     private formatSuccessResponse(data: T): IResponse<T> {
       const returnObj: IResponse<T> = {
         cached: false,
@@ -25,12 +30,24 @@ export class Interceptor<T> implements NestInterceptor<T, IResponse<T>> {
       };
       return returnObj;
     }
-  
-    private handleError(error: Error): Observable<never> {
-      if (error instanceof HttpException) {
-        const { message} = error.getResponse() as IResponse<any>;
-        throw new HttpException({ message, cached: false, timestamp: new Date().toISOString() }, error.getStatus());
+
+    private handleError(error: ServiceException<ERR_TYPE>): Observable<never> {
+      const errorObject = {
+        data: null,
+        message: error.message,
+        cached: false,
+        timestamp: new Date().toISOString(),
       }
-      throw error
+      switch(error.name){
+        case 'RESOURCE_CONFLICT':
+          throw new ConflictException({...errorObject, statusCode: HttpStatus.CONFLICT});
+        case 'ACCESS_FORBIDDEN':
+          throw new ForbiddenException({...errorObject, statusCode: HttpStatus.FORBIDDEN});
+        case 'REQ_MALFORMED':
+          throw new BadRequestException({...errorObject, statusCode: HttpStatus.BAD_REQUEST});
+        case 'UNAUTHORIZED':
+          throw new UnauthorizedException({...errorObject,statusCode:HttpStatus.UNAUTHORIZED});
+      }
+
     }
   }

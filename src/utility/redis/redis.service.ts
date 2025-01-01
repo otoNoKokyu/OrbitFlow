@@ -1,18 +1,22 @@
 import { InjectRedis } from '@nestjs-modules/ioredis';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import Redis from 'ioredis';
 import { RedisPolicy } from './redis.type';
+import { ServiceException } from 'src/helper/CustomError';
+import { ERR_TYPE } from 'src/interface/CustomError';
 @Injectable()
 export class RedisService {
 
     private policy= null;
-    constructor( private readonly redis: Redis, policy: RedisPolicy){
-        this.policy = `${policy}_`
-    }
+    constructor(
+        private readonly redis: Redis,
+        policy: RedisPolicy,
+        private serviceException: ServiceException<ERR_TYPE>
+    ){ this.policy = `${policy}_`}
     async setTempData (key:string, data: any,expiry?:number){
         try{
             const doesExist = await this.getTempData(`${this.policy}${key}`)
-            if(doesExist) throw Error("data exists in cache")
+            if(doesExist) this.serviceException.throw('RESOURCE_CONFLICT','data exists in the cache')
             if(expiry) await this.redis.set(`${this.policy}${key}`, JSON.stringify(data),'EX', expiry)
             else await this.redis.set(`${this.policy}${key}`, JSON.stringify(data),)
         }catch(err){

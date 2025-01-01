@@ -1,87 +1,78 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { User } from './model/User.model';
-import { Op, Sequelize } from 'sequelize';
-import { Roles } from 'src/modules/role/model/roles.model';
-// import { RoleEnum } from 'src/role/utility/roles.enum';
-import { RoleService } from 'src/modules/role/role.service';
-import { RoleEnum } from 'src/modules/role/utility/roles.enum';
-import { UserProject } from '../project/entities/userprojects.model';
+import { UserRepository } from './user.repository';
 import { UserDTO } from '../auth/dto/signup.dto';
+import { RoleService } from '../role/role.service';
 import { ProjectService } from '../project/project.service';
-import { UUID } from 'crypto';
+import { RoleEnum } from '../role/utility/roles.enum';
+import { WhereOptions } from 'sequelize';
+import { MailService } from 'src/utility/mail/mail.service';
+import { JwtEncodables } from 'src/utility/utility.type';
+import { JwtService } from 'src/utility/jwt/jwt.service';
+import { ServiceException } from 'src/helper/CustomError';
+import { ERR_TYPE } from 'src/interface/CustomError';
 
 @Injectable()
 export class UserService {
-
-
     constructor(
-        @Inject(RoleService)
-        @Inject(ProjectService)
-        @Inject(Sequelize) private readonly sequelize: Sequelize,
-        private roleService: RoleService,
-        private projectService: ProjectService
+        @Inject('ServiceException') private serviceException: ServiceException<ERR_TYPE>,
+         private userRepository: UserRepository,
+         private roleService: RoleService,
+         private projectService: ProjectService,
+        private mailService: MailService,
+        private jwtService: JwtService
     ) { }
-
-    async findOne(id: string): Promise<User | null> {
-        const user = await User.findOne({
-            where: { user_id: id }
+    async createUser(user: UserDTO, meta?: { projectId: string }): Promise<User> {
+        let roleId = user.roleId;
+        if (!roleId) {
+            const guestRole = await this.roleService.findRole(RoleEnum.ADMIN);
+            if (!guestRole) this.serviceException.throw('RESOURCE_CONFLICT','Guest role not found');
+            roleId = guestRole.role_id;
+        } else {
+            const roleExists = await this.roleService.findRole(roleId);
+            if (!roleExists) this.serviceException.throw('RESOURCE_CONFLICT','No role found');
+        }
+        const dob = user.date_of_birth ? new Date(user.date_of_birth) : null;
+        delete user.date_of_birth;
+        let userData;
+        try {
+            userData = await User.create({ ...user, roleId, date_of_birth: dob });
+        } catch (err) {
+            console.error('Error creating user:', err);
+            throw Error('Failed to create user');
+        }
+        if (meta) await this.projectService.createUserProject({
+            userId: userData.user_id,
+            roleId: userData.roleId,
+            isActive: true,
+            projectId: meta.projectId
         });
-        return user
+        return userData;
     }
-    async findByCredential(credential: Partial<User>): Promise<User | null> {
-        const user = await User.findOne({
-            where: credential,
-            include: [{ model: Roles }],
-        })
-        return user
+    async me(userId:string): Promise<User>{
+        return await this.userRepository.findOne({user_id:userId})
     }
-    async findDuplicateUser({ username, email, phone_number, first_name }: Partial<User>): Promise<Boolean> {
-        const user = await User.findAll({
-            where: {
-                [Op.or]: [{ username }, { email }, { phone_number }, { first_name }]
-            }
-        })
-        if (user.length) return true
-        else return false
+    async  invite(
+        { roleId, pId, email, username,userId }: { roleId: string; pId: string, email:string, username:string,userId:string },
+    ): Promise<string> {
+        const project = await this.projectService.findProjectById(pId);
+        if (!project) this.serviceException.throw('RESOURCE_CONFLICT','no project found');
+        const userProject = await this.projectService.findUserProjects({projectId:pId,roleId})
+        if(userProject.length) this.serviceException.throw('RESOURCE_CONFLICT',"User already present in Project")
+        const encodeBody = {
+            projectId: pId,
+            roleId,
+            inviterId: userId,
+        };
+        const secretInvitationId = await this.jwtService.sign(encodeBody, JwtEncodables.INVITE);
+        this.mailService.sendEmail(username, project.name, email, secretInvitationId);
+        return 'invitation sent';
     }
-    async createUser(user: Partial<UserDTO>, meta?: {assigned_role:string, projectId:string}): Promise<User> {
-        const roleExists = await this.roleService.findRole(meta?.assigned_role || user?.assigned_role)
-        if (!roleExists) throw Error('No role found')
-        delete user.assigned_role
-        const dob = new Date(user.date_of_birth)
-        delete user.date_of_birth
-        let userData
-        try{
-             userData = await User.create({ ...user, roleId: roleExists.role_id, date_of_birth:dob })
-
-        }catch(err){
-            console.log(err)
-
-        }
-        if (meta) {
-            await this.projectService.createUserProject({
-                userId: userData.user_id,
-                roleId: userData.roleId,
-                isActive: true,
-                projectId: meta.projectId
-            })
-        }
-        return userData
-
+    
+    async findByCredential(query: Partial<User> ): Promise<User | null> {
+        return await this.userRepository.findOne(query)
     }
-    async findOneById(id:UUID): Promise<User> {
-        const userData = await User.findOne({
-            where: {user_id: id}
-        })
-        if(!userData) throw Error('user not found')
-        return userData
-
-    }
-    async updateUserTokens(access_token: string, refresh_token: string, userId: string): Promise<void> {
-
-        await User.update(
-            { access_token, refresh_token },
-            { where: { user_id: userId } }
-        );
+    async update(payload: Partial<User>,condition:WhereOptions<Partial<User>>) {
+        return await this.userRepository.updateUser({payload,condition})
     }
 }
