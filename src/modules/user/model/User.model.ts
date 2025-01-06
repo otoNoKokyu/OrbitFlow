@@ -95,19 +95,16 @@ export class User extends Model<User> {
   @BelongsTo(() => Roles)
   role: Roles;
 
- @Column({
-  type: DataType.BOOLEAN,
-  allowNull: false,
-  defaultValue: false,
-})
-isInvited: boolean;
+  @Column({
+    type: DataType.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+  })
+  isInvited: boolean;
 
-@Column({
-  type: DataType.STRING(100),
-  allowNull: true,
-  defaultValue: null,
-})
-invited_by: string;
+  @ForeignKey(() => User)
+  @Column(DataType.UUID)
+  invited_by: string;
 
 }
 

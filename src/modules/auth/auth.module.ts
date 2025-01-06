@@ -10,6 +10,8 @@ import { RedisPolicy } from 'src/utility/redis/redis.type';
 import Redis from 'ioredis';
 import { JwtService } from 'src/utility/jwt/jwt.service';
 import { verifyMiddleware } from 'src/middlewares/auth/invite.middleware';
+import { ServiceException } from 'src/helper/CustomError';
+import { ERR_TYPE } from 'src/interface/CustomError';
 @Module({
   imports : [UserModule,RoleModule,ProjectModule],
   providers: [AuthService,MailService, JwtService,
@@ -18,9 +20,13 @@ import { verifyMiddleware } from 'src/middlewares/auth/invite.middleware';
       useValue: RedisPolicy.USER,  
     },
     {
+      provide: 'serviceException',  
+      useValue: ServiceException,  
+    },
+    {
       provide: RedisService,
-      useFactory: (policy: RedisPolicy) => new RedisService(new Redis(), policy),
-      inject: ['USER_POLICY'],
+      useFactory: (policy: RedisPolicy,exceptionClass: ServiceException<ERR_TYPE>) => new RedisService(new Redis(), policy,exceptionClass),
+      inject: ['USER_POLICY','serviceException'],
       scope: Scope.REQUEST, 
     },
   ],

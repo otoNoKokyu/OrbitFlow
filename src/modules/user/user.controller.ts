@@ -9,7 +9,7 @@ export class UserController {
     constructor(private _userService: UserService){}
     @Get('/me')
     public async me(@Req() { user }: Request & { user: any },) {
-        const me = this._userService.findOneById(user.userId)
+        const me = this._userService.findByCredential({user_id: user.user_id})
         return me;
     }
     @Put('/editProfile')

@@ -1,44 +1,28 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { Roles } from './model/roles.model';
-import { InjectModel } from '@nestjs/sequelize';
-import { where } from 'sequelize';
+import { RoleRepository } from './role.repository';
 
 @Injectable()
 export class RoleService {
 
-  constructor() { }
-  async create(createRoleDto: CreateRoleDto) {
-    const doesExist = await Roles.findOne({
-      where: { ...createRoleDto }
-    })
+  constructor( private roleRepository: RoleRepository) { }
+  async createRole(payload: CreateRoleDto) {
+    const doesExist = await this.roleRepository.findRole(payload.role)
     if (doesExist) throw new Error('role already exist')
-    await Roles.create({ ...createRoleDto, isActive: true })
+    await this.roleRepository.create({...payload, isActive:true})
     return 'role created successfully'
   }
-
-  findAll() {
-    return `This action returns all role`;
+  async findAll() {
+    return await this.roleRepository.findAll()
+  }
+  async findOne(id: string) {
+    return await this.roleRepository.findOne(id)
+  }
+  async findRole(name: string) {
+    return await this.roleRepository.findRole(name)
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} role`;
-  }
-  async findRole(name: string): Promise<any> {
-    const role = await Roles.findOne({
-      where: { role: name },
-      attributes: ['role_id'],
-      raw:true
-    });
-    return role
-  }
 
-  update(id: number, updateRoleDto: UpdateRoleDto) {
-    return `This action updates a #${id} role`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} role`;
-  }
 }

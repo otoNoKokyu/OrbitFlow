@@ -6,7 +6,7 @@ import { SequelizeModule } from '@nestjs/sequelize';
 import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { User } from './modules/user/model/User.model';
-import { authMiddleware } from './middlewares/auth/auth.middleware';
+import { AuthMiddleware } from './middlewares/auth/auth.middleware';
 import { RoleModule } from './modules/role/role.module';
 import { Roles } from './modules/role/model/roles.model';
 import { MailerModule } from '@nestjs-modules/mailer';
@@ -16,6 +16,9 @@ import { APP_GUARD } from '@nestjs/core';
 import { RedisModule } from '@nestjs-modules/ioredis';
 import { RolesGuard } from './guards/role.guard';
 import { UserProject } from './modules/project/entities/userprojects.model';
+import { HelperModule } from './helper/helper.module';
+import { MiddlewareModule } from './middlewares/middleware.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot(),
@@ -58,6 +61,8 @@ import { UserProject } from './modules/project/entities/userprojects.model';
       })
     }),
     UserModule,
+    MiddlewareModule,
+    HelperModule,
     AuthModule,
     RoleModule,
     ProjectModule
@@ -70,19 +75,4 @@ import { UserProject } from './modules/project/entities/userprojects.model';
     }
   ],
 })
-export class AppModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(authMiddleware)
-      .exclude(
-        { path: '/auth/signin', method: RequestMethod.POST },
-        { path: '/auth/signup', method: RequestMethod.POST },
-        { path: '/auth/token', method: RequestMethod.POST },
-        { path: '/role/create', method: RequestMethod.POST },
-        { path: '/auth/verify', method: RequestMethod.POST },
-        { path: '/auth/sendOtp', method: RequestMethod.POST },
-      )
-      .forRoutes({path: '*', method: RequestMethod.ALL})
-
-  }
-}
+export class AppModule {}

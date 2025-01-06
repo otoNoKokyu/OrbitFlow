@@ -1,6 +1,6 @@
 import { Table, Column, Model, DataType, ForeignKey } from 'sequelize-typescript';
-// import { Sprints } from './sprint.model'; // Adjust the import based on your project structure
 import { User } from 'src/modules/user/model/User.model';
+
 @Table({ tableName: 'projects' })
 export class Projects extends Model<Projects> {
   @Column({
@@ -28,12 +28,13 @@ export class Projects extends Model<Projects> {
   })
   end_date: Date;
 
-//   @ForeignKey(() => Sprints)
-//   @Column({
-//     type: DataType.CHAR(36),
-//     allowNull: true,
-//   })
-//   current_sprint_id: string;
+  // Uncomment if you want to use Sprints
+  // @ForeignKey(() => Sprints)
+  // @Column({
+  //   type: DataType.CHAR(36),
+  //   allowNull: true,
+  // })
+  // current_sprint_id: string;
 
   @Column({
     type: DataType.INTEGER,
@@ -63,13 +64,13 @@ export class Projects extends Model<Projects> {
 
   @Column({
     type: DataType.DATE,
-    defaultValue: DataType.NOW,
+    allowNull: true, 
   })
   created_at: Date;
 
   @Column({
     type: DataType.DATE,
-    defaultValue: DataType.NOW,
+    allowNull: true,
   })
   updated_at: Date;
 }
