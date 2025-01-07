@@ -28,12 +28,14 @@ export class AuthService {
         const isPwdValid = await comparePwd(password_hash, password)
         if (!isPwdValid) this.serviceException.throw('RESOURCE_CONFLICT','password does not match')
 
-        const encodeBody = { userId: user_id, role: roleId }
+        const encodeBody = { userId: user_id, role: roleId, username: userExist.username }
+
         const [access_token, refresh_token] = await Promise.all([
             this.jwtService.sign(encodeBody, JwtEncodables.ACCESS_TOKEN),
             this.jwtService.sign(encodeBody, JwtEncodables.REFRESH_TOKEN),
 
         ])
+        console.log(access_token.length,refresh_token.length)
         await this.userService.update({ access_token, refresh_token }, { user_id: userExist.user_id })
         return { username: userExist.username, access_token, refresh_token }
     }
@@ -78,7 +80,7 @@ export class AuthService {
         const doesExist = await this.userService.findByCredential({ user_id: decoded.userId })
         if (!doesExist.is_active) throw this.serviceException.throw('RESOURCE_CONFLICT','user not active')
 
-        const encodeBody = { userId: decoded.userId, role: decoded.role }
+        const encodeBody = { userId: decoded.userId, role: decoded.role, username: decoded.username }
         const [access_token, refresh_token] = await Promise.all([
             this.jwtService.sign(encodeBody, JwtEncodables.ACCESS_TOKEN),
             this.jwtService.sign(encodeBody, JwtEncodables.REFRESH_TOKEN),

@@ -57,7 +57,7 @@ export class UserService {
     ): Promise<string> {
         const project = await this.projectService.findProjectById(pId);
         if (!project) this.serviceException.throw('RESOURCE_CONFLICT','no project found');
-        const userProject = await this.projectService.findUserProjects({projectId:pId,roleId})
+        const userProject = await this.projectService.findUserProjectsByFilter({projectId:pId,roleId,userId})
         if(userProject.length) this.serviceException.throw('RESOURCE_CONFLICT',"User already present in Project")
         const encodeBody = {
             projectId: pId,
@@ -68,11 +68,40 @@ export class UserService {
         this.mailService.sendEmail(username, project.name, email, secretInvitationId);
         return 'invitation sent';
     }
-    
+    async getUserMeData (userId:string) {
+        const query = `
+        SELECT users.username,users.user_id,users.phone_number,users.email, p.name as project, p.id as projectId
+        FROM users 
+        LEFT JOIN user_projects up ON users.user_id = up.userId
+        LEFT JOIN projects p ON up.projectId =p.id
+        WHERE users.user_id = '${userId}'
+        `
+        const result = await this.userRepository.rawQuery(query)
+        return result.reduce((acc, user) => {
+            let existingUser = acc.find(u => u.user_id === user.user_id);
+            if (!existingUser) {
+                existingUser = {
+                    username: user.username,
+                    user_id: user.user_id,
+                    phone_number: user.phone_number,
+                    email: user.email,
+                    projects: []
+                };
+                acc.push(existingUser);
+            }
+            existingUser.projects.push({
+                project: user.project,
+                projectId: user.projectId
+            });
+            
+            return acc;
+        }, [])[0]
+
+    }
     async findByCredential(query: Partial<User> ): Promise<User | null> {
         return await this.userRepository.findOne(query)
     }
-    async update(payload: Partial<User>,condition:WhereOptions<Partial<User>>) {
+    async update(payload: Partial<User>,condition:Partial<User>) {
         return await this.userRepository.updateUser({payload,condition})
     }
 }

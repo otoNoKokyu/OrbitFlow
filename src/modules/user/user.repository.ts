@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { User } from './model/User.model';
-import { Op, Sequelize, WhereOptions } from 'sequelize';
+import { Op, QueryTypes, Sequelize, WhereOptions } from 'sequelize';
 import { Roles } from 'src/modules/role/model/roles.model';
 import { RoleService } from 'src/modules/role/role.service';
 import { RoleEnum } from 'src/modules/role/utility/roles.enum';
@@ -30,14 +30,12 @@ export class UserRepository {
             where: payload
         })
     }
-    // async findOneById(id: UUID): Promise<User> {
-    //     const userData = await User.findOne({
-    //         where: { user_id: id }
-    //     })
-    //     if (!userData) throw Error('user not found')
-    //     return userData
-
-    // }
+    async rawQuery(query): Promise<any[]> {
+        return await User.sequelize.query(
+            query,
+            {type:QueryTypes.SELECT}
+        ) as User[]
+    }
     async updateUser({payload,condition}:{payload:Partial<User>, condition: WhereOptions<Partial<User>> }): Promise<void> {
         await User.update(
             payload,

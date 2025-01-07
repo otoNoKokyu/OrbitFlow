@@ -15,9 +15,6 @@ export class ProjectService {
     const x =  await this.projectRepository.create(data);
     return x;
   }
-  async createUserProject(data: UserProjectDTO): Promise<UserProject> {
-    return await this.userProjectRepository.create(data);
-  }
   async findProjectById(id: string): Promise<Projects> {
     const project = await this.projectRepository.findById(id)
     return project;
@@ -26,15 +23,27 @@ export class ProjectService {
     const project = await this.projectRepository.findbyFilter(filter)
     return project;
   }
+  async createUserProject(data: UserProjectDTO): Promise<UserProject> {
+    return await this.userProjectRepository.create(data);
+  }
   async findUserProjects(filter:Partial<UserProjectDTO>): Promise<UserProject[]> {
+
+    let condition = ''
+    let filterProperties = Object.keys(filter)
+    filterProperties.map((e,index)=>{
+      condition += `${e} = '${filter[e]}'`
+      if (filterProperties.length-1 !== index) condition += ' AND '
+    })
+
     const result =  await this.userProjectRepository
     .rawQuery(
-      `SELECT * FROM user_projects 
-        WHERE projectId = '${filter.projectId}' AND roleId = '${filter.roleId}';
-    `
+      `SELECT user_projects.isActive, p.name, p.id FROM user_projects LEFT JOIN projects p ON user_projects.projectId = p.id WHERE ${condition};`
     )
     return result;
+
   }
-
-
+  async findUserProjectsByFilter(filter:Partial<UserProjectDTO>): Promise<UserProject[]> {
+    const result =  await this.userProjectRepository.findByFilter(filter)
+    return result;
+  }
 }

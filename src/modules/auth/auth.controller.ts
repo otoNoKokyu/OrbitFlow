@@ -7,6 +7,7 @@ import { EligbleInviteRole } from 'src/modules/role/utility/roles.enum';
 import { Role } from 'src/decorators/role.decorator';
 import { UserService } from '../user/user.service';
 import { AuthService } from './auth.service';
+import { UUID } from 'crypto';
 
 @Controller('auth')
 export class AuthController {
@@ -47,7 +48,7 @@ export class AuthController {
     @HttpCode(200)
     @Role(EligbleInviteRole.Inviter)
     private async invite(
-        @Query() { roleId, pId }: { roleId: string, pId: string },
+        @Query() { roleId, pId }: { roleId: UUID, pId: string },
         @Req() { user, body: { email } }: ExpressRequest & { user: any },
     ) {
         return await this.usersService.invite({ roleId, pId, email, username: user.username, userId: user.userId })
