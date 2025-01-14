@@ -32,14 +32,6 @@ export class AuthController {
         @Body() data: ModelCreationAttributes<User> & {projectId:string}
     ) {
         const user = await this.authService.signUp(data)
-        if(data.projectId) {
-            await this.useProjectService.create({
-                projectId:data.projectId,
-                roleId: data.roleId,
-                userId: user.user_id,
-                isActive:true
-            })
-        }
         return user
     }
     @Post('/sendOtp')

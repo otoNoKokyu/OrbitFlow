@@ -32,14 +32,15 @@ export class BaseRepository<T extends Model> implements IBaseRepository<T> {
     const data =  await this.model.findAll({
       where: query as unknown as WhereOptions<T>,
     });
-    return data.map(e=>e.toJSON())
+    return data.length ? data.map(e=>e.toJSON()): [];
   }
 
-  async findOne(query: AtLeastOneAttribute<T>): Promise<ModelAttributes<T>> {
+  async findOne(query: AtLeastOneAttribute<T>, ): Promise<ModelAttributes<T> | null> {
     const data =  await this.model.findOne({
       where: query as unknown as WhereOptions<T>,
+      
     })
-    return data.toJSON()
+    return data ? data.toJSON(): null;
   }
 
   async update(

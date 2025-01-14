@@ -11,6 +11,7 @@ import { ERR_TYPE } from 'src/interface/CustomError';
 import { User } from '../user/model/User.model';
 import { ModelCreationAttributes } from 'src/common/interface/IBase';
 import { isEmptyObject } from 'src/utility/NullishUtills';
+import { UserProjectService } from '../project/userProject.service';
 @Injectable()
 export class AuthService {
     constructor(
@@ -18,13 +19,14 @@ export class AuthService {
          private userService: UserService,
          private jwtService: JwtService,
          private redisService: RedisService,
-        private mailService: MailService
+        private mailService: MailService,
+        private userProjectService: UserProjectService
     ) {
      }
     async signIn(data: {email:string,password:string}) {
         const { email, password } = data
         const userExist = await this.userService.findOne({ email });
-        if (isEmptyObject(userExist)) this.serviceException.throw('RESOURCE_CONFLICT','user not found')
+        if (!userExist)  this.serviceException.throw('RESOURCE_CONFLICT','user not found')
         const { password_hash, roleId, user_id } = userExist
 
         const isPwdValid = await comparePwd(password_hash, password)
@@ -40,20 +42,31 @@ export class AuthService {
         await this.userService.update({ access_token, refresh_token }, { user_id: user_id })
         return { username: userExist.username, access_token, refresh_token }
     }
-    async signUp(data:  ModelCreationAttributes<User>) {
-        const { username, email, phone_number, first_name, invited_by } = data
-        const userExist = await this.userService.findOne({
+    async signUp(data:  ModelCreationAttributes<User> & {projectId:string}) {
+        const { username, email, phone_number, first_name, invited_by,roleId, projectId } = data
+        const filter = {
             username,
             email,
             phone_number,
             first_name,
-            invited_by
-        });
+            roleId
+        }
+        if( invited_by) filter['invited_by'] = invited_by
+        const userExist = await this.userService.findOne(filter);
         if (userExist) this.serviceException.throw('RESOURCE_CONFLICT','user already exists')
         const hasedPwd = await hashFn(data.password_hash);
-        userExist.password_hash = hasedPwd
+        data.password_hash = hasedPwd
 
-        return this.userService.create(userExist)
+        const user = await this.userService.create(data)
+        if(data.projectId) {
+            await this.userProjectService.create({
+                projectId:data.projectId,
+                roleId: data.roleId,
+                userId: user.user_id,
+                isActive:true
+            })
+        }
+
     }
     async sendOtp(
         { resend, email }: { resend: boolean, email: string }

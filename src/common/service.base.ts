@@ -22,7 +22,7 @@ export class BaseService<T extends Model<any, any>> implements IBaseService<T> {
     return await this.repository.findAll(query);
   }
 
-  async findOne(query: AtLeastOneAttribute<T>): Promise<ModelAttributes<T>> {
+  async findOne(query: AtLeastOneAttribute<T>): Promise<ModelAttributes<T> | null> {
     const data = await this.repository.findOne(query);
     return data;
   }

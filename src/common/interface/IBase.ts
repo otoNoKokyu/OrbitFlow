@@ -28,7 +28,7 @@ export interface IBase<T extends Model<any, any>>  {
 export interface IBaseService<T extends Model<any, any>>  {
   create(body: ModelCreationAttributes<T>): Promise<ModelAttributes<T>>;
   findAll(query?: EntityAttributes<T>): Promise<ModelAttributes<T>[]>;
-  findOne(query: AtLeastOneAttribute<T>): Promise<ModelAttributes<T>>;
+  findOne(query: AtLeastOneAttribute<T>): Promise<ModelAttributes<T>| null>;
   update(filter: AtLeastOneAttribute<T>, body: AtLeastOneAttribute<T>):  Promise<string>;
   delete(filter: AtLeastOneAttribute<T>, options?: DestroyOptions<T>): Promise<string>;
   rawQuery(query: string): Promise<ModelAttributes<T>[]>;
@@ -37,7 +37,7 @@ export interface IBaseService<T extends Model<any, any>>  {
 export interface IBaseRepository<T extends Model<any, any>>  {
   create(body: ModelCreationAttributes<T>): Promise<ModelAttributes<T>>;
   findAll(query?: EntityAttributes<T>): Promise<ModelAttributes<T>[]>;
-  findOne(query: AtLeastOneAttribute<T>): Promise<ModelAttributes<T>>;
+  findOne(query: AtLeastOneAttribute<T>): Promise<ModelAttributes<T>| null>;
   update(filter: AtLeastOneAttribute<T>, body: AtLeastOneAttribute<T>):  Promise<[affectedCount: number]>;
   delete(filter: AtLeastOneAttribute<T>, options?: DestroyOptions<T>): Promise<number>;
   rawQuery(query: string): Promise<ModelAttributes<T>[]>;

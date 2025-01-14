@@ -30,7 +30,6 @@ export class UserService extends BaseService<User> {
         super(userRepository)
     }
     async create(user:ModelCreationAttributes<User>){
-        let roleId = user.roleId;
         // if (!roleId) {
         //     const guestRole = await this.roleService.findRole(RoleEnum.ADMIN);
         //     if (!guestRole) this.serviceException.throw('RESOURCE_CONFLICT','Guest role not found');
@@ -41,7 +40,7 @@ export class UserService extends BaseService<User> {
         // }
         const dob = user.date_of_birth ? new Date(user.date_of_birth) : null;
         delete user.date_of_birth;
-        return await this.userRepository.create({ ...user, roleId, date_of_birth: dob });
+        return await this.userRepository.create({ ...user, date_of_birth: dob });
 
         // if (meta) await this.userProjectService.create({
         //     userId: userData.user_id,
