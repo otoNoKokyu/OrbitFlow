@@ -1,18 +1,21 @@
 import { Controller,HttpCode, Query, Req } from '@nestjs/common';
 import { Request as ExpressRequest } from 'express';
 import { SignInDto } from './dto/signin.dto'
-import { UserDTO } from './dto/signup.dto'
 import { Body, Post, } from '@nestjs/common';
 import { EligbleInviteRole } from 'src/modules/role/utility/roles.enum';
 import { Role } from 'src/decorators/role.decorator';
 import { UserService } from '../user/user.service';
 import { AuthService } from './auth.service';
 import { UUID } from 'crypto';
+import { ModelCreationAttributes } from 'src/common/interface/IBase';
+import { User } from '../user/model/User.model';
+import { UserProjectService } from '../project/userProject.service';
 
 @Controller('auth')
 export class AuthController {
     constructor(
         private usersService: UserService,
+        private useProjectService: UserProjectService,
         private authService: AuthService,
     ) { }
 
@@ -26,9 +29,18 @@ export class AuthController {
     @Post('/signUp')
     @HttpCode(201)
     private async signUp(
-        @Body() data: UserDTO
+        @Body() data: ModelCreationAttributes<User> & {projectId:string}
     ) {
-        return await this.authService.signUp(data)
+        const user = await this.authService.signUp(data)
+        if(data.projectId) {
+            await this.useProjectService.create({
+                projectId:data.projectId,
+                roleId: data.roleId,
+                userId: user.user_id,
+                isActive:true
+            })
+        }
+        return user
     }
     @Post('/sendOtp')
     @HttpCode(200)

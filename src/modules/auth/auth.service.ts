@@ -1,14 +1,16 @@
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { SignInDto } from './dto/signin.dto';
 import { UserService } from '../user/user.service';
 import { JwtService } from 'src/utility/jwt/jwt.service';
 import { comparePwd, hashFn } from './helper/bcrypt';
 import { JwtEncodables } from 'src/utility/utility.type';
-import { UserDTO } from './dto/signup.dto';
 import { RedisService } from 'src/utility/redis/redis.service';
 import { MailService } from 'src/utility/mail/mail.service';
 import { ServiceException } from 'src/helper/CustomError';
 import { ERR_TYPE } from 'src/interface/CustomError';
+import { User } from '../user/model/User.model';
+import { ModelCreationAttributes } from 'src/common/interface/IBase';
+import { isEmptyObject } from 'src/utility/NullishUtills';
 @Injectable()
 export class AuthService {
     constructor(
@@ -16,13 +18,13 @@ export class AuthService {
          private userService: UserService,
          private jwtService: JwtService,
          private redisService: RedisService,
-        private mailService: MailService,
-    ) { }
-    async signIn(data: SignInDto) {
+        private mailService: MailService
+    ) {
+     }
+    async signIn(data: {email:string,password:string}) {
         const { email, password } = data
-        const userExist = await this.userService.findByCredential({ email });
-
-        if (!userExist) this.serviceException.throw('RESOURCE_CONFLICT','user not found')
+        const userExist = await this.userService.findOne({ email });
+        if (isEmptyObject(userExist)) this.serviceException.throw('RESOURCE_CONFLICT','user not found')
         const { password_hash, roleId, user_id } = userExist
 
         const isPwdValid = await comparePwd(password_hash, password)
@@ -35,13 +37,12 @@ export class AuthService {
             this.jwtService.sign(encodeBody, JwtEncodables.REFRESH_TOKEN),
 
         ])
-        console.log(access_token.length,refresh_token.length)
-        await this.userService.update({ access_token, refresh_token }, { user_id: userExist.user_id })
+        await this.userService.update({ access_token, refresh_token }, { user_id: user_id })
         return { username: userExist.username, access_token, refresh_token }
     }
-    async signUp(data: UserDTO) {
-        const { username, email, phone_number, first_name, projectId, invited_by } = data
-        const userExist = await this.userService.findByCredential({
+    async signUp(data:  ModelCreationAttributes<User>) {
+        const { username, email, phone_number, first_name, invited_by } = data
+        const userExist = await this.userService.findOne({
             username,
             email,
             phone_number,
@@ -50,14 +51,9 @@ export class AuthService {
         });
         if (userExist) this.serviceException.throw('RESOURCE_CONFLICT','user already exists')
         const hasedPwd = await hashFn(data.password_hash);
-        const userData = {
-            ...data,
-            password_hash: hasedPwd,
-            date_of_birth: new Date(data.date_of_birth)
-        }
-        if (projectId) await this.userService.createUser(userData, { projectId })
-        else await this.userService.createUser(userData)
-        return 'user registered'
+        userExist.password_hash = hasedPwd
+
+        return this.userService.create(userExist)
     }
     async sendOtp(
         { resend, email }: { resend: boolean, email: string }
@@ -77,7 +73,7 @@ export class AuthService {
     }
     async token(token: string) {
         const decoded: any = this.jwtService.verify(token, JwtEncodables.REFRESH_TOKEN)
-        const doesExist = await this.userService.findByCredential({ user_id: decoded.userId })
+        const doesExist = await this.userService.findOne({ user_id: decoded.userId })
         if (!doesExist.is_active) throw this.serviceException.throw('RESOURCE_CONFLICT','user not active')
 
         const encodeBody = { userId: decoded.userId, role: decoded.role, username: decoded.username }

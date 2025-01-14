@@ -6,48 +6,44 @@ import { UpdateProjectDto } from './dto/update-project.dto';
 import { RoleEnum } from '../role/utility/roles.enum';
 import { Role } from 'src/decorators/role.decorator';
 import { Projects } from './entities/project.model';
+import { UserProjectService } from './userProject.service';
+import { EntityAttributes, ModelCreationAttributes } from 'src/common/interface/IBase';
+import { UserProject } from './entities/userprojects.model';
 
 @Controller('project')
 export class ProjectController {
-  constructor(private readonly projectService: ProjectService) {}
+  constructor(
+    private readonly projectService: ProjectService,
+    private readonly userProjectService: UserProjectService
+
+  ) {}
 
   @Role(RoleEnum.ADMIN)
   @Post('/')
   @UsePipes(new ValidationPipe())
-  public async createProject(
-    @Body() body: ProjectsDto,
+  public async create(
+    @Body() body: ModelCreationAttributes<Projects>,
     @Req() { user }: { user: { userId: string; roleId: string } }
   ) {
-    try {
-      const data = await this.projectService.createProject(body as unknown as Projects);
+      const data = await this.projectService.create(body);
       const { userId, roleId } = user;
-      await this.projectService.createUserProject({
-        projectId: data.id,
-        userId,
-        roleId,
-        isActive: true
-      });
-      return { message: 'Project created', projectId: data.id };
-    } catch (error) {
-      throw new Error('Error creating project');
-    }
+      const project = await this.projectService.create(data,{userId,roleId});
+      return project;
   }
 
   @Get('/userProjects')
   public async getUserProjects(
-    @Query() query: any
+    @Query() query: EntityAttributes<UserProject>
   ) {
-    console.log("jdsbs",query)
-    const data = await this.projectService.findUserProjects(query);
+    const data = await this.userProjectService.findAll(query)
     return data;
   }
-
   @Role(RoleEnum.ADMIN)
   @Get('/')
   public async getProjectsByFilter(
-    @Query() query: any
+    @Query() query: EntityAttributes<Projects>
   ) {
-    const data = await this.projectService.findProjects(query);
+    const data = await this.projectService.findAll(query);
     return data;
   }
 }
