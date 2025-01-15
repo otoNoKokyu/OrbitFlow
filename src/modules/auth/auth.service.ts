@@ -1,14 +1,17 @@
-import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { SignInDto } from './dto/signin.dto';
 import { UserService } from '../user/user.service';
 import { JwtService } from 'src/utility/jwt/jwt.service';
 import { comparePwd, hashFn } from './helper/bcrypt';
 import { JwtEncodables } from 'src/utility/utility.type';
-import { UserDTO } from './dto/signup.dto';
 import { RedisService } from 'src/utility/redis/redis.service';
 import { MailService } from 'src/utility/mail/mail.service';
 import { ServiceException } from 'src/helper/CustomError';
 import { ERR_TYPE } from 'src/interface/CustomError';
+import { User } from '../user/model/User.model';
+import { ModelCreationAttributes } from 'src/common/interface/IBase';
+import { isEmptyObject } from 'src/utility/NullishUtills';
+import { UserProjectService } from '../project/userProject.service';
 @Injectable()
 export class AuthService {
     constructor(
@@ -17,45 +20,53 @@ export class AuthService {
          private jwtService: JwtService,
          private redisService: RedisService,
         private mailService: MailService,
-    ) { }
-    async signIn(data: SignInDto) {
+        private userProjectService: UserProjectService
+    ) {
+     }
+    async signIn(data: {email:string,password:string}) {
         const { email, password } = data
-        const userExist = await this.userService.findByCredential({ email });
-
-        if (!userExist) this.serviceException.throw('RESOURCE_CONFLICT','user not found')
+        const userExist = await this.userService.findOne({ email });
+        if (!userExist)  this.serviceException.throw('RESOURCE_CONFLICT','user not found')
         const { password_hash, roleId, user_id } = userExist
 
         const isPwdValid = await comparePwd(password_hash, password)
         if (!isPwdValid) this.serviceException.throw('RESOURCE_CONFLICT','password does not match')
 
-        const encodeBody = { userId: user_id, role: roleId }
+        const encodeBody = { userId: user_id, role: roleId, username: userExist.username }
+
         const [access_token, refresh_token] = await Promise.all([
             this.jwtService.sign(encodeBody, JwtEncodables.ACCESS_TOKEN),
             this.jwtService.sign(encodeBody, JwtEncodables.REFRESH_TOKEN),
 
         ])
-        await this.userService.update({ access_token, refresh_token }, { user_id: userExist.user_id })
+        await this.userService.update({ access_token, refresh_token }, { user_id: user_id })
         return { username: userExist.username, access_token, refresh_token }
     }
-    async signUp(data: UserDTO) {
-        const { username, email, phone_number, first_name, projectId, invited_by } = data
-        const userExist = await this.userService.findByCredential({
+    async signUp(data:  ModelCreationAttributes<User> & {projectId:string}) {
+        const { username, email, phone_number, first_name, invited_by,roleId, projectId } = data
+        const filter = {
             username,
             email,
             phone_number,
             first_name,
-            invited_by
-        });
+            roleId
+        }
+        if( invited_by) filter['invited_by'] = invited_by
+        const userExist = await this.userService.findOne(filter);
         if (userExist) this.serviceException.throw('RESOURCE_CONFLICT','user already exists')
         const hasedPwd = await hashFn(data.password_hash);
-        const userData = {
-            ...data,
-            password_hash: hasedPwd,
-            date_of_birth: new Date(data.date_of_birth)
+        data.password_hash = hasedPwd
+
+        const user = await this.userService.create(data)
+        if(data.projectId) {
+            await this.userProjectService.create({
+                projectId:data.projectId,
+                roleId: data.roleId,
+                userId: user.user_id,
+                isActive:true
+            })
         }
-        if (projectId) await this.userService.createUser(userData, { projectId })
-        else await this.userService.createUser(userData)
-        return 'user registered'
+
     }
     async sendOtp(
         { resend, email }: { resend: boolean, email: string }
@@ -75,10 +86,10 @@ export class AuthService {
     }
     async token(token: string) {
         const decoded: any = this.jwtService.verify(token, JwtEncodables.REFRESH_TOKEN)
-        const doesExist = await this.userService.findByCredential({ user_id: decoded.userId })
+        const doesExist = await this.userService.findOne({ user_id: decoded.userId })
         if (!doesExist.is_active) throw this.serviceException.throw('RESOURCE_CONFLICT','user not active')
 
-        const encodeBody = { userId: decoded.userId, role: decoded.role }
+        const encodeBody = { userId: decoded.userId, role: decoded.role, username: decoded.username }
         const [access_token, refresh_token] = await Promise.all([
             this.jwtService.sign(encodeBody, JwtEncodables.ACCESS_TOKEN),
             this.jwtService.sign(encodeBody, JwtEncodables.REFRESH_TOKEN),

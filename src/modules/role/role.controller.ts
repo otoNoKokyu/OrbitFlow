@@ -2,21 +2,13 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/commo
 import { RoleService } from './role.service';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
+import { BaseController } from 'src/common/controller.base';
+import { Roles } from './model/roles.model';
+import { RoleRepository } from './role.repository';
 
 @Controller('role')
-export class RoleController {
-  constructor(private readonly roleService: RoleService) {}
-  @Post('/create')
-  async create(@Body() createRoleDto: CreateRoleDto) {
-    return this.roleService.createRole(createRoleDto);
+export class RoleController extends BaseController<Roles> {
+  constructor( roleService: RoleService) {
+    super(roleService)
   }
-  @Get('/')
-  findAll() {
-    return this.roleService.findAll();
-  }
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.roleService.findOne(id);
-  }
-
 }

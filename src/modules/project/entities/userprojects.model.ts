@@ -12,20 +12,21 @@ export class UserProject extends Model<UserProject> {
     type: DataType.CHAR(36),
     primaryKey: true,
     defaultValue: DataType.UUIDV4,
+    allowNull: false,
   })
   id: string;
 
   @ForeignKey(() => Projects)
   @Column({
     type: DataType.CHAR(36),
-    allowNull: true,
+    allowNull: false,
   })
   projectId: string;
 
   @ForeignKey(() => User)
   @Column({
     type: DataType.CHAR(36),
-    allowNull: true,
+    allowNull: false,
   })
   userId: string;
 
@@ -38,5 +39,6 @@ export class UserProject extends Model<UserProject> {
 
   @Default(true)
   @Column(DataType.BOOLEAN)
-  isActive: boolean;
+  isActive?: boolean;
 }
+export type UserProjectType = typeof UserProject

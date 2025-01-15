@@ -102,6 +102,7 @@ export class User extends Model<User> {
   })
   isInvited: boolean;
 
+  @AllowNull(true)
   @ForeignKey(() => User)
   @Column(DataType.UUID)
   invited_by: string;

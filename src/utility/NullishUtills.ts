@@ -1,0 +1,1 @@
+export const isEmptyObject = (data: object) => Object.entries(data).length ? false : true

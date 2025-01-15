@@ -13,7 +13,8 @@ import { verifyMiddleware } from 'src/middlewares/auth/invite.middleware';
 import { ServiceException } from 'src/helper/CustomError';
 import { ERR_TYPE } from 'src/interface/CustomError';
 @Module({
-  imports : [UserModule,RoleModule,ProjectModule],
+  imports : [
+    UserModule,RoleModule,ProjectModule],
   providers: [AuthService,MailService, JwtService,
     {
       provide: 'USER_POLICY',  
