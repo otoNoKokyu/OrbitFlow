@@ -8,6 +8,7 @@ import {
     HttpStatus,
     Injectable,
     NestInterceptor,
+    NotFoundException,
     UnauthorizedException,
 } from '@nestjs/common';
 import { Observable, catchError, map, throwError } from 'rxjs';
@@ -47,6 +48,8 @@ export class Interceptor<T> implements NestInterceptor<T, IResponse<T>> {
           throw new BadRequestException({...errorObject, statusCode: HttpStatus.BAD_REQUEST});
         case 'UNAUTHORIZED':
           throw new UnauthorizedException({...errorObject,statusCode:HttpStatus.UNAUTHORIZED});
+        case 'NOT_FOUND': 
+          throw new NotFoundException({...errorObject, statusCode: HttpStatus.NOT_FOUND})
       }
 
     }

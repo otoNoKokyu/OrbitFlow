@@ -1,5 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { SignInDto } from './dto/signin.dto';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { UserService } from '../user/user.service';
 import { JwtService } from 'src/utility/jwt/jwt.service';
 import { comparePwd, hashFn } from './helper/bcrypt';
@@ -10,13 +9,13 @@ import { ServiceException } from 'src/helper/CustomError';
 import { ERR_TYPE } from 'src/interface/CustomError';
 import { User } from '../user/model/User.model';
 import { ModelCreationAttributes } from 'src/common/interface/IBase';
-import { isEmptyObject } from 'src/utility/NullishUtills';
 import { UserProjectService } from '../project/userProject.service';
+
 @Injectable()
 export class AuthService {
     constructor(
         @Inject('ServiceException') private serviceException: ServiceException<ERR_TYPE>,
-         private userService: UserService,
+        @Inject(forwardRef(()=> UserService)) private userService: UserService,
          private jwtService: JwtService,
          private redisService: RedisService,
         private mailService: MailService,
@@ -68,9 +67,7 @@ export class AuthService {
         }
 
     }
-    async sendOtp(
-        { resend, email }: { resend: boolean, email: string }
-    ) {
+    async sendOtp({ resend, email }: { resend: boolean, email: string }) {
         const resendOtp = Math.floor(10000 + Math.random() * 90000)
         const newDate = new Date(new Date().getTime() + 2 * 60 * 1000);
         const newUnixTime = Math.floor(newDate.getTime() / 1000);
@@ -97,9 +94,7 @@ export class AuthService {
         await this.userService.update({ access_token, refresh_token }, { user_id: doesExist.user_id })
         return { username: doesExist.username, access_token, refresh_token }
     }
-    async verify(
-        { email, otp }: { email: string, otp: number }
-    ): Promise<string> {
+    async verify({ email, otp }: { email: string, otp: number }): Promise<string> {
         const tempUserData = await this.redisService.getTempData(email)
         if (!tempUserData) this.serviceException.throw('RESOURCE_CONFLICT','data not found')
         const currentUnixTime = Math.floor(Date.now() / 1000)

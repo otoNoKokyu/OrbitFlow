@@ -1,4 +1,4 @@
-import {Inject, Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { User } from './model/User.model';
 import { UserRepository } from './user.repository';
 import { UserDTO } from '../auth/dto/signup.dto';
@@ -14,28 +14,30 @@ import { ERR_TYPE } from 'src/interface/CustomError';
 import { UserProjectService } from '../project/userProject.service';
 import { BaseService } from 'src/common/service.base';
 import { ModelCreationAttributes } from 'src/common/interface/IBase';
-import { MakeNullishOptional } from 'sequelize/types/utils';
+import { CredentialInfo, PersonalInfo } from './dto/edit.user.profile.dto';
+import { isEmail } from 'class-validator';
+import { AuthService } from '../auth/auth.service';
 
 export const usersProviders = [
     {
-      provide: 'USER_REPOSITORY',
-      useValue: User,
+        provide: 'USER_REPOSITORY',
+        useValue: User,
     },
-  ];
+];
 @Injectable()
 export class UserService extends BaseService<User> {
     constructor(
         @Inject('ServiceException') private serviceException: ServiceException<ERR_TYPE>,
-         private userRepository: UserRepository,
-         private roleService: RoleService,
-         private projectService: ProjectService,
-         private userProjectService: UserProjectService,
+        @Inject(forwardRef(()=> AuthService)) private authService: AuthService,
+        private userRepository: UserRepository,
+        private projectService: ProjectService,
+        private userProjectService: UserProjectService,
         private mailService: MailService,
-        private jwtService: JwtService
-    ) { 
+        private jwtService: JwtService,
+    ) {
         super(userRepository)
     }
-    async create(user:ModelCreationAttributes<User>){
+    async create(user: ModelCreationAttributes<User>) {
         // if (!roleId) {
         //     const guestRole = await this.roleService.findRole(RoleEnum.ADMIN);
         //     if (!guestRole) this.serviceException.throw('RESOURCE_CONFLICT','Guest role not found');
@@ -55,20 +57,20 @@ export class UserService extends BaseService<User> {
         //     projectId: meta.projectId
         // });
     }
-    async me(userId:string){
-        return await this.userRepository.findOne({user_id:userId})
+    async me(userId: string) {
+        return await this.userRepository.findOne({ user_id: userId })
     }
-    async  invite(
-        { roleId, pId, email, username,userId }: { roleId: string; pId: string, email:string, username:string,userId:string },
+    async invite(
+        { roleId, pId, email, username, userId }: { roleId: string; pId: string, email: string, username: string, userId: string },
     ): Promise<string> {
         const project = await this.projectService.findOne({});
-        if (!project) this.serviceException.throw('RESOURCE_CONFLICT','no project found');
+        if (!project) this.serviceException.throw('RESOURCE_CONFLICT', 'no project found');
         const userProject = await this.userProjectService.findAll({
-            projectId:pId,
+            projectId: pId,
             roleId,
             userId
         })
-        if(userProject.length) this.serviceException.throw('RESOURCE_CONFLICT',"User already present in Project")
+        if (userProject.length) this.serviceException.throw('RESOURCE_CONFLICT', "User already present in Project")
         const encodeBody = {
             projectId: pId,
             roleId,
@@ -78,7 +80,7 @@ export class UserService extends BaseService<User> {
         this.mailService.sendEmail(username, project.name, email, secretInvitationId);
         return 'invitation sent';
     }
-    async getUserMeData (userId:string) {
+    async getUserMeData(userId: string) {
         const query = `
         SELECT users.username,users.user_id,users.phone_number,users.email, p.name as project, p.id as projectId
         FROM users 
@@ -103,10 +105,29 @@ export class UserService extends BaseService<User> {
                 project: user.project,
                 projectId: user.projectId
             });
-            
+
             return acc;
         }, [])[0]
 
     }
 
+    async validateEmailUpdate(payload: { info: Partial<CredentialInfo>, model: UserDTO }) {
+        if (!isEmail(payload.info.email)) return this.serviceException.throw('REQ_MALFORMED', 'invalid email!');
+        const userWithSameEmail = await User.findOne({ where: { email: payload.info.email } });
+        if (userWithSameEmail) this.serviceException.throw('RESOURCE_CONFLICT', 'user with same email already exists!');
+        await this.authService.sendOtp({resend: false, email: payload.info.email })
+    }
+
+    async updateUserEmail(payload: UserDTO) {
+        const user = await User.findOne({ where: { user_id: payload.user_id } });
+        if (!user) this.serviceException.throw('NOT_FOUND', 'user not found!');
+        this.validateEmailUpdate({ info: { email: payload.email }, model: payload });
+        await this.userRepository.update({ email: payload.email }, { user_id: user.id });
+    }
+
+    async editUserProfile(payload: UserDTO): Promise<void> {
+        this.updateUserEmail(payload);
+        const updatedPersonalInfo: PersonalInfo = { ...payload, date_of_birth: new Date(payload.date_of_birth) };
+        await this.userRepository.update(updatedPersonalInfo, { user_id: payload.user_id });
+    }
 }
