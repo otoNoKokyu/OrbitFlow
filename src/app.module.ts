@@ -18,6 +18,7 @@ import { RolesGuard } from './guards/role.guard';
 import { UserProject } from './modules/project/entities/userprojects.model';
 import { HelperModule } from './helper/helper.module';
 import { MiddlewareModule } from './middlewares/middleware.module';
+import { UtilityModule } from './utility/utility.module';
 
 @Module({
   imports: [

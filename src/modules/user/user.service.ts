@@ -17,6 +17,7 @@ import { ModelCreationAttributes } from 'src/common/interface/IBase';
 import { CredentialInfo, PersonalInfo } from './dto/edit.user.profile.dto';
 import { isEmail } from 'class-validator';
 import { AuthService } from '../auth/auth.service';
+import { UserSecurityService } from 'src/utility/user-security/user-security.service';
 
 export const usersProviders = [
     {
@@ -28,12 +29,12 @@ export const usersProviders = [
 export class UserService extends BaseService<User> {
     constructor(
         @Inject('ServiceException') private serviceException: ServiceException<ERR_TYPE>,
-        @Inject(forwardRef(()=> AuthService)) private authService: AuthService,
         private userRepository: UserRepository,
         private projectService: ProjectService,
         private userProjectService: UserProjectService,
         private mailService: MailService,
         private jwtService: JwtService,
+        private userSecurityService : UserSecurityService,
     ) {
         super(userRepository)
     }
@@ -115,7 +116,7 @@ export class UserService extends BaseService<User> {
         if (!isEmail(payload.info.email)) return this.serviceException.throw('REQ_MALFORMED', 'invalid email!');
         const userWithSameEmail = await User.findOne({ where: { email: payload.info.email } });
         if (userWithSameEmail) this.serviceException.throw('RESOURCE_CONFLICT', 'user with same email already exists!');
-        await this.authService.sendOtp({resend: false, email: payload.info.email })
+        await this.userSecurityService.sendOtp({resend: false, email: payload.info.email })
     }
 
     async updateUserEmail(payload: UserDTO) {

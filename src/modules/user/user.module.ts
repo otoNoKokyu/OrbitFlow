@@ -8,14 +8,16 @@ import { UserService } from './user.service';
 import { MailService } from 'src/utility/mail/mail.service';
 import { JwtService } from 'src/utility/jwt/jwt.service';
 import { ProjectModule } from '../project/project.module';
+import { UserSecurityModule } from 'src/utility/user-security/user-security.module';
 
 @Module({
   imports: [
     SequelizeModule.forFeature([User]),
     RoleModule,
-    ProjectModule
+    ProjectModule,
+    UserSecurityModule,
   ],
-  providers: [UserRepository,UserService,MailService,JwtService],
+  providers: [UserRepository,UserService,MailService, JwtService],
   exports: [UserService],
   controllers: [UserController]
 })

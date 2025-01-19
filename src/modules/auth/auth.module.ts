@@ -11,8 +11,10 @@ import { JwtService } from 'src/utility/jwt/jwt.service';
 import { verifyMiddleware } from 'src/middlewares/auth/invite.middleware';
 import { ServiceException } from 'src/helper/CustomError';
 import { ERR_TYPE } from 'src/interface/CustomError';
+import { UserModule } from '../user/user.module';
+import { UserSecurityModule } from 'src/utility/user-security/user-security.module';
 @Module({
-  imports : [RoleModule,ProjectModule],
+  imports : [RoleModule,ProjectModule, UserModule, UserSecurityModule],
   providers: [AuthService,MailService, JwtService,
     {
       provide: 'USER_POLICY',  
