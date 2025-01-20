@@ -9,38 +9,26 @@ import { Projects } from './entities/project.model';
 import { UserProjectService } from './userProject.service';
 import { EntityAttributes, ModelCreationAttributes } from 'src/common/interface/IBase';
 import { UserProject } from './entities/userprojects.model';
+import { BaseController } from 'src/common/controller.base';
 
-@Controller('project')
-export class ProjectController {
-  constructor(
-    private readonly projectService: ProjectService,
-  ) {}
+@Controller('userproject')
+export class UserProjectController extends BaseController<UserProject> {
+  constructor(private readonly userProjectService: UserProjectService) {super(userProjectService)
+}
 
-  @Role([RoleEnum.PLATFORM_ADMIN])
-  @Post('/')
-  @UsePipes(new ValidationPipe())
+  @Role([RoleEnum.ADMIN])
   public async create(
     @Body() body: ModelCreationAttributes<Projects>,
-    @Req() { user }: { user: { userId: string; roleId: string } }
   ) {
-      const { userId, roleId } = user;
-      const project = await this.projectService.create(body,{userId,roleId});
-      return project;
+    return super.create(body)
   }
 
-  // @Get('/userProjects')
-  // public async getUserProjects(
-  //   @Query() query: EntityAttributes<UserProject>
-  // ) {
-  //   const data = await this.userProjectService.findAll(query)
-  //   return data;
-  // }
-  @Role([RoleEnum.ADMIN])
+//   @Role([RoleEnum.ADMIN,RoleEnum.PRODUCT_OWNER])
   @Get('/')
-  public async getProjectsByFilter(
+  public async findAll(
     @Query() query: EntityAttributes<Projects>
   ) {
-    const data = await this.projectService.findAll(query);
-    return data;
+    // return query ? super.findAll(query): this.userProjectService.rawQuery()
+    return this.userProjectService.findAll(query)
   }
 }

@@ -59,7 +59,7 @@ export class UserService extends BaseService<User> {
     async invite(
         { roleId, pId, email, username, userId }: { roleId: string; pId: string, email: string, username: string, userId: string },
     ): Promise<string> {
-        const project = await this.projectService.findOne({});
+        const project = await this.projectService.findOne({ id: pId });
         if (!project) this.serviceException.throw('RESOURCE_CONFLICT', 'no project found');
         const userProject = await this.userProjectService.findAll({
             projectId: pId,
@@ -78,28 +78,41 @@ export class UserService extends BaseService<User> {
     }
     async getUserMeData(userId: string) {
         const query = `
-        SELECT users.username,users.user_id,users.phone_number,users.email, p.name as project, p.id as projectId
-        FROM users 
-        LEFT JOIN user_projects up ON users.user_id = up.userId
-        LEFT JOIN projects p ON up.projectId =p.id
-        WHERE users.user_id = '${userId}'
+        SELECT 
+        u.username,
+        u.user_id,
+        u.phone_number,
+        u.email,
+        p.name AS project,
+        p.id AS projectId,
+        r.role AS role
+        FROM 
+        users u
+        LEFT JOIN 
+        user_projects up ON u.user_id = up.userId
+        LEFT JOIN 
+        projects p ON up.projectId = p.id
+        LEFT JOIN 
+        roles r ON up.roleId = r.role_id
+        WHERE u.user_id = '${userId}'
         `
         const result = await this.userRepository.rawQuery(query)
         return result.reduce((acc, user) => {
             let existingUser = acc.find(u => u.user_id === user.user_id);
             if (!existingUser) {
                 existingUser = {
-                    username: user.username,
-                    user_id: user.user_id,
-                    phone_number: user.phone_number,
-                    email: user.email,
-                    projects: []
+                    username: user?.username,
+                    user_id: user?.user_id,
+                    phone_number: user?.phone_number,
+                    email: user?.email,
+                    role: user?.role,
+                    projects: [],
                 };
                 acc.push(existingUser);
             }
             existingUser.projects.push({
-                project: user.project,
-                projectId: user.projectId
+                project: user?.project,
+                projectId: user?.projectId
             });
 
             return acc;

@@ -1,11 +1,14 @@
 import { Module, MiddlewareConsumer, NestModule, RequestMethod } from '@nestjs/common';
 import { AuthMiddleware } from './auth/auth.middleware';
 import { JwtService } from 'src/utility/jwt/jwt.service';
+import { RoleService } from 'src/modules/role/role.service';
+import { RoleModule } from 'src/modules/role/role.module';
 
 @Module({
     providers: [
-        JwtService,
+        JwtService
     ],
+    imports:[RoleModule]
 })
 export class MiddlewareModule implements NestModule {
     configure(consumer: MiddlewareConsumer) {

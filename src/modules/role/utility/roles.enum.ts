@@ -6,6 +6,7 @@ export enum RoleEnum {
     PRODUCT_OWNER = 'PRODUCT_OWNER',
     QA = 'QA',
     ADMIN = 'ADMIN',
+    PLATFORM_ADMIN = 'SUPER_ADMIN'
   }
 export enum EligbleInviteRole {
   Inviter =  RoleEnum.ADMIN

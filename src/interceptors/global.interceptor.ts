@@ -31,20 +31,21 @@ export class Interceptor<T> implements NestInterceptor<T, IResponse<T>> {
       return returnObj;
     }
 
-    private handleError(error: ServiceException<ERR_TYPE>): Observable<never> {
+    private handleError(error: ServiceException<ERR_TYPE>): Observable<IResponse<T>> {
       const errorObject = {
         data: null,
         message: error.message,
         cached: false,
         timestamp: new Date().toISOString(),
-      }
-      switch(error.name){
+      };
+      
+      switch (error.name) {
         case 'RESOURCE_CONFLICT':
-          throw new ConflictException({...errorObject, statusCode: HttpStatus.CONFLICT});
+          throw new ConflictException(errorObject);
         case 'ACCESS_FORBIDDEN':
-          throw new ForbiddenException({...errorObject, statusCode: HttpStatus.FORBIDDEN});
+          throw new ForbiddenException(errorObject);
         case 'REQ_MALFORMED':
-          throw new BadRequestException({...errorObject, statusCode: HttpStatus.BAD_REQUEST});
+          throw new BadRequestException(errorObject);
         case 'UNAUTHORIZED':
           throw new UnauthorizedException({...errorObject,statusCode:HttpStatus.UNAUTHORIZED});
         case 'NOT_FOUND': 
@@ -53,6 +54,5 @@ export class Interceptor<T> implements NestInterceptor<T, IResponse<T>> {
           console.log(error.message)
           throw new InternalServerErrorException({...errorObject})
       }
-
     }
   }

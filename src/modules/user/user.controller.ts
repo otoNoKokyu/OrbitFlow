@@ -14,7 +14,6 @@ export class UserController {
     @Get('/me')
     private me (
         @Req() { user }: { user: any },
-
     )
     {
         return this._userService.getUserMeData(user.userId)

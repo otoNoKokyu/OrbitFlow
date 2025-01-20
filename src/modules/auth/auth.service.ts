@@ -13,6 +13,8 @@ import { UserProjectService } from '../project/userProject.service';
 import { UserSecurityService } from 'src/utility/user-security/user-security.service';
 import { ForgetPasswordDto } from './dto/forget.password.dto';
 
+import { RoleService } from '../role/role.service';
+import { RoleEnum } from '../role/utility/roles.enum';
 @Injectable()
 export class AuthService {
     constructor(
@@ -23,6 +25,7 @@ export class AuthService {
         private mailService: MailService,
         private userProjectService: UserProjectService,
         private userSecurityService: UserSecurityService,
+        private roleService: RoleService
     ) {
     }
     async signIn(data: { email: string, password: string }) {
@@ -44,14 +47,13 @@ export class AuthService {
         await this.userService.update({ access_token, refresh_token }, { user_id: user_id })
         return { username: userExist.username, access_token, refresh_token }
     }
-    async signUp(data: ModelCreationAttributes<User> & { projectId: string }) {
-        const { username, email, phone_number, first_name, invited_by, roleId, projectId } = data
+    async signUp(data:  ModelCreationAttributes<User> & {projectId:string}) {
+        const { username, email, phone_number, first_name, invited_by } = data
         const filter = {
             username,
             email,
             phone_number,
             first_name,
-            roleId
         }
         if (invited_by) filter['invited_by'] = invited_by
         const userExist = await this.userService.findOne(filter);
@@ -59,15 +61,22 @@ export class AuthService {
         const hasedPwd = await hashFn(data.password_hash);
         data.password_hash = hasedPwd
 
-        const user = await this.userService.create(data)
-        if (data.projectId) {
+        if(data.projectId) {
+            const invitedRoleId = data.roleId
+            delete data.roleId
+            const user = await this.userService.create(data)
             await this.userProjectService.create({
-                projectId: data.projectId,
-                roleId: data.roleId,
+                projectId:data.projectId,
+                roleId: invitedRoleId,
                 userId: user.user_id,
                 isActive: true
             })
+            return user;
         }
+        const {role_id} = await this.roleService.findOne({role: RoleEnum.ADMIN})
+        const user = await this.userService.create({...data, roleId: role_id})
+        return user
+
 
     }
 

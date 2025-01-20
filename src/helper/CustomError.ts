@@ -1,4 +1,4 @@
-import { ConflictException, HttpException, HttpStatus } from "@nestjs/common";
+import { ConflictException, HttpException, HttpStatus, UnauthorizedException } from "@nestjs/common";
 import { ERR_TYPE, IServiceError } from "src/interface/CustomError";
 
 
@@ -20,13 +20,13 @@ export class ServiceException<T extends string> extends Error implements IServic
 
 export class MiddlewareException extends HttpException {
     constructor(message: string, public code: HttpStatus) {
-        super(message,code)
+        super(message, code)
         Error.captureStackTrace(this, this.constructor);
     }
 
     throw(code: HttpStatus, message: string) {
-        if(code === 401) throw new ConflictException(message,);
-        
+        throw (code === 401) ?
+            new UnauthorizedException(message,) : (code == 409) ? new ConflictException(message,) : new ConflictException(message,)
     }
 
 }

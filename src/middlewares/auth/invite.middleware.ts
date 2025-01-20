@@ -9,8 +9,8 @@ export async function verifyMiddleware(req: Request & { user: any }, res: Respon
         const jwtService = new JwtService()
         const verfiedCred = jwtService.verify(inviteeCredentials as string,JwtEncodables.INVITE)
         if(verfiedCred && Object.keys(verfiedCred)?.length) {
-            const {projectId,assigned_role, inviterId} = verfiedCred 
-            req.body = {...req.body,projectId,assigned_role, invited_by:inviterId}
+            const {projectId,roleId, inviterId} = verfiedCred 
+            req.body = {...req.body,projectId,roleId, invited_by:inviterId}
         }
         return next()
     }

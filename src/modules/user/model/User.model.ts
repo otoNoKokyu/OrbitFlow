@@ -87,7 +87,7 @@ export class User extends Model<User> {
   @Column(DataType.STRING)
   refresh_token: string
 
-  @AllowNull(false)
+  @AllowNull(true)
   @ForeignKey(() => Roles)
   @Column(DataType.UUID)
   roleId: string;
