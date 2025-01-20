@@ -12,6 +12,7 @@ import { User } from '../user/model/User.model';
 import { UserSecurityService } from 'src/utility/user-security/user-security.service';
 import { JoiValidationPipe } from 'src/common/pipes/schema.validation.pipe';
 import { ForgetPasswordDto, ForgetPasswordSchema } from './dto/forget.password.dto';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('auth')
 export class AuthController {
@@ -69,6 +70,7 @@ export class AuthController {
 
     @Post('/forget-password')
     @HttpCode(200)
+    @Throttle({ default: { limit: 3, ttl: 60000 } })
     private async forgetPassword(
         @Body() {email}: {email: string}
     ) {
@@ -77,6 +79,7 @@ export class AuthController {
 
     @Post('/reset-password')
     @HttpCode(200)
+    @Throttle({ default: { limit: 3, ttl: 60000 } })
     @UsePipes(new JoiValidationPipe(ForgetPasswordSchema))
     private async resetPassword(
         @Body() model: ForgetPasswordDto

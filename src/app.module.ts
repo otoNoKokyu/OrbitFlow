@@ -1,4 +1,4 @@
-import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
+import { Module} from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -6,7 +6,6 @@ import { SequelizeModule } from '@nestjs/sequelize';
 import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { User } from './modules/user/model/User.model';
-import { AuthMiddleware } from './middlewares/auth/auth.middleware';
 import { RoleModule } from './modules/role/role.module';
 import { Roles } from './modules/role/model/roles.model';
 import { MailerModule } from '@nestjs-modules/mailer';
@@ -18,7 +17,7 @@ import { RolesGuard } from './guards/role.guard';
 import { UserProject } from './modules/project/entities/userprojects.model';
 import { HelperModule } from './helper/helper.module';
 import { MiddlewareModule } from './middlewares/middleware.module';
-import { UtilityModule } from './utility/utility.module';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
   imports: [
@@ -61,6 +60,10 @@ import { UtilityModule } from './utility/utility.module';
         url: 'redis://localhost:6379',
       })
     }),
+    ThrottlerModule.forRoot([{
+      ttl: 60000,
+      limit: 5,
+    }]),
     UserModule,
     MiddlewareModule,
     HelperModule,
@@ -73,6 +76,10 @@ import { UtilityModule } from './utility/utility.module';
     {
       provide: APP_GUARD,
       useClass: RolesGuard
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard
     }
   ],
 })
