@@ -15,7 +15,6 @@ import { UserProjectService } from '../project/userProject.service';
 export class AuthController {
     constructor(
         private usersService: UserService,
-        private useProjectService: UserProjectService,
         private authService: AuthService,
     ) { }
 

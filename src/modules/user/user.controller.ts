@@ -4,7 +4,6 @@ import { UserService } from './user.service';
 @Controller('user')
 export class UserController {
     constructor(private userService:UserService){}
-
     @Get('')
     private hello(){
         return 'how are you'
@@ -13,7 +12,6 @@ export class UserController {
     @Get('/me')
     private me (
         @Req() { user }: { user: any },
-
     )
     {
         return this.userService.getUserMeData(user.userId)

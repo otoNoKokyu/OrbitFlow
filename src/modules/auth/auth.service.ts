@@ -12,6 +12,8 @@ import { User } from '../user/model/User.model';
 import { ModelCreationAttributes } from 'src/common/interface/IBase';
 import { isEmptyObject } from 'src/utility/NullishUtills';
 import { UserProjectService } from '../project/userProject.service';
+import { RoleService } from '../role/role.service';
+import { RoleEnum } from '../role/utility/roles.enum';
 @Injectable()
 export class AuthService {
     constructor(
@@ -20,7 +22,8 @@ export class AuthService {
          private jwtService: JwtService,
          private redisService: RedisService,
         private mailService: MailService,
-        private userProjectService: UserProjectService
+        private userProjectService: UserProjectService,
+        private roleService: RoleService
     ) {
      }
     async signIn(data: {email:string,password:string}) {
@@ -43,13 +46,12 @@ export class AuthService {
         return { username: userExist.username, access_token, refresh_token }
     }
     async signUp(data:  ModelCreationAttributes<User> & {projectId:string}) {
-        const { username, email, phone_number, first_name, invited_by,roleId, projectId } = data
+        const { username, email, phone_number, first_name, invited_by } = data
         const filter = {
             username,
             email,
             phone_number,
             first_name,
-            roleId
         }
         if( invited_by) filter['invited_by'] = invited_by
         const userExist = await this.userService.findOne(filter);
@@ -57,15 +59,22 @@ export class AuthService {
         const hasedPwd = await hashFn(data.password_hash);
         data.password_hash = hasedPwd
 
-        const user = await this.userService.create(data)
         if(data.projectId) {
+            const invitedRoleId = data.roleId
+            delete data.roleId
+            const user = await this.userService.create(data)
             await this.userProjectService.create({
                 projectId:data.projectId,
-                roleId: data.roleId,
+                roleId: invitedRoleId,
                 userId: user.user_id,
                 isActive:true
             })
+            return user;
         }
+        const {role_id} = await this.roleService.findOne({role: RoleEnum.ADMIN})
+        const user = await this.userService.create({...data, roleId: role_id})
+        return user
+
 
     }
     async sendOtp(

@@ -7,12 +7,13 @@ import { UserProject } from './entities/userprojects.model';
 import { ProjectRepository } from './project.repository';
 import { UserProjectRepository } from './userProject.repository';
 import { UserProjectService } from './userProject.service';
+import { UserProjectController } from './userProject.controller';
 
 @Module({
   imports:[
     SequelizeModule.forFeature([Projects,UserProject])
 ],
-  controllers: [ProjectController],
+  controllers: [ProjectController, UserProjectController],
   providers: [ProjectService,ProjectRepository, UserProjectRepository,UserProjectService],
   exports: [ProjectService,UserProjectService]
 })
