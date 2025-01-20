@@ -9,7 +9,6 @@ import { AuthService } from './auth.service';
 import { UUID } from 'crypto';
 import { ModelCreationAttributes } from 'src/common/interface/IBase';
 import { User } from '../user/model/User.model';
-import { UserProjectService } from '../project/userProject.service';
 import { UserSecurityService } from 'src/utility/user-security/user-security.service';
 import { JoiValidationPipe } from 'src/common/pipes/schema.validation.pipe';
 import { ForgetPasswordDto, ForgetPasswordSchema } from './dto/forget.password.dto';
@@ -18,7 +17,6 @@ import { ForgetPasswordDto, ForgetPasswordSchema } from './dto/forget.password.d
 export class AuthController {
     constructor(
         private usersService: UserService,
-        private useProjectService: UserProjectService,
         private authService: AuthService,
         private userSecurityService: UserSecurityService,
     ) { }

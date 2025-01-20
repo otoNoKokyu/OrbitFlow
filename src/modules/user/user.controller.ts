@@ -1,6 +1,6 @@
 import { Body, Controller, Get, HttpCode, Put, Req } from '@nestjs/common';
 import { UserService } from './user.service';
-import { UserDTO } from '../auth/dto/signup.dto';
+import { EditUserDto } from './dto/edit.user.profile.dto';
 
 @Controller('user')
 export class UserController {
@@ -21,7 +21,7 @@ export class UserController {
     }
     @Put('/editProfile')
     @HttpCode(200)
-    public async editUserProfile(@Body() user: UserDTO) {
+    public async editUserProfile(@Body() user: EditUserDto) {
        return await this._userService.editUserProfile(user);
     }
 }

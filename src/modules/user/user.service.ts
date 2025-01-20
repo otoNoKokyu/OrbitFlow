@@ -1,11 +1,7 @@
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { User } from './model/User.model';
 import { UserRepository } from './user.repository';
-import { UserDTO } from '../auth/dto/signup.dto';
-import { RoleService } from '../role/role.service';
 import { ProjectService } from '../project/project.service';
-import { RoleEnum } from '../role/utility/roles.enum';
-import { WhereOptions } from 'sequelize';
 import { MailService } from 'src/utility/mail/mail.service';
 import { JwtEncodables } from 'src/utility/utility.type';
 import { JwtService } from 'src/utility/jwt/jwt.service';
@@ -14,9 +10,8 @@ import { ERR_TYPE } from 'src/interface/CustomError';
 import { UserProjectService } from '../project/userProject.service';
 import { BaseService } from 'src/common/service.base';
 import { ModelCreationAttributes } from 'src/common/interface/IBase';
-import { CredentialInfo, PersonalInfo } from './dto/edit.user.profile.dto';
+import { CredentialInfo, EditUserDto, PersonalInfo } from './dto/edit.user.profile.dto';
 import { isEmail } from 'class-validator';
-import { AuthService } from '../auth/auth.service';
 import { UserSecurityService } from 'src/utility/user-security/user-security.service';
 
 export const usersProviders = [
@@ -112,21 +107,21 @@ export class UserService extends BaseService<User> {
 
     }
 
-    async validateEmailUpdate(payload: { info: Partial<CredentialInfo>, model: UserDTO }) {
+    async validateEmailUpdate(payload: { info: Partial<CredentialInfo>, model: EditUserDto }) {
         if (!isEmail(payload.info.email)) return this.serviceException.throw('REQ_MALFORMED', 'invalid email!');
-        const userWithSameEmail = await User.findOne({ where: { email: payload.info.email } });
+        const userWithSameEmail = await this.findOne({ email: payload.model.email });
         if (userWithSameEmail) this.serviceException.throw('RESOURCE_CONFLICT', 'user with same email already exists!');
         await this.userSecurityService.sendOtp({resend: false, email: payload.info.email })
     }
 
-    async updateUserEmail(payload: UserDTO) {
-        const user = await User.findOne({ where: { user_id: payload.user_id } });
+    async updateUserEmail(payload: EditUserDto) {
+        const user = await this.findOne({user_id: payload.user_id});
         if (!user) this.serviceException.throw('NOT_FOUND', 'user not found!');
-        this.validateEmailUpdate({ info: { email: payload.email }, model: payload });
+        this.validateEmailUpdate({ info: { email: user.email }, model: payload });
         await this.userRepository.update({ email: payload.email }, { user_id: user.id });
     }
 
-    async editUserProfile(payload: UserDTO): Promise<void> {
+    async editUserProfile(payload: EditUserDto): Promise<void> {
         this.updateUserEmail(payload);
         const updatedPersonalInfo: PersonalInfo = { ...payload, date_of_birth: new Date(payload.date_of_birth) };
         await this.userRepository.update(updatedPersonalInfo, { user_id: payload.user_id });

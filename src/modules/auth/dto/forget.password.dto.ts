@@ -1,6 +1,6 @@
 import * as Joi from 'joi';
 
-export class ForgetPasswordDto {
+export interface ForgetPasswordDto {
     email: string;
     newPassword: string;
     confirmPassword : string;

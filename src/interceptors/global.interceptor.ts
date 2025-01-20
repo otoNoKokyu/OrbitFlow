@@ -4,9 +4,8 @@ import {
     ConflictException,
     ExecutionContext,
     ForbiddenException,
-    HttpException,
     HttpStatus,
-    Injectable,
+    InternalServerErrorException,
     NestInterceptor,
     NotFoundException,
     UnauthorizedException,
@@ -50,6 +49,9 @@ export class Interceptor<T> implements NestInterceptor<T, IResponse<T>> {
           throw new UnauthorizedException({...errorObject,statusCode:HttpStatus.UNAUTHORIZED});
         case 'NOT_FOUND': 
           throw new NotFoundException({...errorObject, statusCode: HttpStatus.NOT_FOUND})
+        default:
+          console.log(error.message)
+          throw new InternalServerErrorException({...errorObject})
       }
 
     }

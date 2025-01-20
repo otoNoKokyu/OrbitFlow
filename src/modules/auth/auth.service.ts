@@ -100,7 +100,6 @@ export class AuthService {
         if (!user) this.serviceException.throw('NOT_FOUND', 'user not found!');
         this.userSecurityService.sendOtp({ email, resend: false });
         const newHasedPwd = await hashFn(newPassword)
-        console.log(newHasedPwd);
-        // this.userService.update({ email }, { password_hash: newHasedPwd });
+        this.userService.update({ email }, { password_hash: newHasedPwd });
     }
 }
