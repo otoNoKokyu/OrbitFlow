@@ -2,7 +2,8 @@ export type ERR_TYPE =
     | 'RESOURCE_CONFLICT'
     | 'ACCESS_FORBIDDEN'
     | 'UNAUTHORIZED'
-    | 'REQ_MALFORMED';
+    | 'REQ_MALFORMED'
+    | 'NOT_FOUND';
 
 
 export interface IServiceError<T> {

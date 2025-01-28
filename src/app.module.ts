@@ -1,12 +1,11 @@
-import { MiddlewareConsumer, Module, NestModule, RequestMethod } from '@nestjs/common';
+import { Module} from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SequelizeModule } from '@nestjs/sequelize';
 import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { User } from './modules/user/model/User.model';
-import { AuthMiddleware } from './middlewares/auth/auth.middleware';
 import { RoleModule } from './modules/role/role.module';
 import { Roles } from './modules/role/model/roles.model';
 import { MailerModule } from '@nestjs-modules/mailer';
@@ -18,6 +17,7 @@ import { RolesGuard } from './guards/role.guard';
 import { UserProject } from './modules/project/entities/userprojects.model';
 import { HelperModule } from './helper/helper.module';
 import { MiddlewareModule } from './middlewares/middleware.module';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
   imports: [
@@ -34,13 +34,13 @@ import { MiddlewareModule } from './middlewares/middleware.module';
       },
     }),
     SequelizeModule.forRootAsync({
-      useFactory: async () => ({
+      useFactory: async (configServce: ConfigService) => ({
         dialect: 'mysql',
-        host: process.env.DB_HOST,
-        port: +process.env.DB_PORT,
-        username: process.env.DB_USERNAME,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_DATABASE,
+        host: configServce.get("DB_HOST"),
+        port: +configServce.get("DB_PORT"),
+        username: configServce.get("DB_USERNAME"),
+        password: configServce.get("DB_PASSWORD"),
+        database: configServce.get("DB_DATABASE"),
         models: [User,Roles,Projects,UserProject],
         synchronize: true,
         pool:{
@@ -51,6 +51,8 @@ import { MiddlewareModule } from './middlewares/middleware.module';
         },
         autoLoadModels:true,
       }),
+      imports: [ConfigModule],
+      inject: [ConfigService]
     }), 
     RedisModule.forRootAsync({
       useFactory: async()=> ({
@@ -58,6 +60,10 @@ import { MiddlewareModule } from './middlewares/middleware.module';
         url: 'redis://localhost:6379',
       })
     }),
+    ThrottlerModule.forRoot([{
+      ttl: 60000,
+      limit: 5,
+    }]),
     UserModule,
     MiddlewareModule,
     HelperModule,
@@ -70,6 +76,10 @@ import { MiddlewareModule } from './middlewares/middleware.module';
     {
       provide: APP_GUARD,
       useClass: RolesGuard
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard
     }
   ],
 })

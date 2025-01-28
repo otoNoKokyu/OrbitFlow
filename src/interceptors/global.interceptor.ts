@@ -4,11 +4,10 @@ import {
     ConflictException,
     ExecutionContext,
     ForbiddenException,
-    HttpException,
     HttpStatus,
-    Injectable,
     InternalServerErrorException,
     NestInterceptor,
+    NotFoundException,
     UnauthorizedException,
 } from '@nestjs/common';
 import { Observable, catchError, map, throwError } from 'rxjs';
@@ -48,9 +47,12 @@ export class Interceptor<T> implements NestInterceptor<T, IResponse<T>> {
         case 'REQ_MALFORMED':
           throw new BadRequestException(errorObject);
         case 'UNAUTHORIZED':
-          throw new UnauthorizedException(errorObject);
+          throw new UnauthorizedException({...errorObject,statusCode:HttpStatus.UNAUTHORIZED});
+        case 'NOT_FOUND': 
+          throw new NotFoundException({...errorObject, statusCode: HttpStatus.NOT_FOUND})
         default:
-          throw new InternalServerErrorException(errorObject);
+          console.log(error.message)
+          throw new InternalServerErrorException({...errorObject})
       }
     }
   }

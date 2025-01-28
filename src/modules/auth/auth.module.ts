@@ -1,7 +1,6 @@
 import { MiddlewareConsumer, Module, Scope } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
-import { UserModule } from 'src/modules/user/user.module';
 import { RoleModule } from 'src/modules/role/role.module';
 import { ProjectModule } from 'src/modules/project/project.module';
 import { MailService } from 'src/utility/mail/mail.service';
@@ -12,9 +11,10 @@ import { JwtService } from 'src/utility/jwt/jwt.service';
 import { verifyMiddleware } from 'src/middlewares/auth/invite.middleware';
 import { ServiceException } from 'src/helper/CustomError';
 import { ERR_TYPE } from 'src/interface/CustomError';
+import { UserModule } from '../user/user.module';
+import { UserSecurityModule } from 'src/utility/user-security/user-security.module';
 @Module({
-  imports : [
-    UserModule,RoleModule,ProjectModule],
+  imports : [RoleModule,ProjectModule, UserModule, UserSecurityModule],
   providers: [AuthService,MailService, JwtService,
     {
       provide: 'USER_POLICY',  

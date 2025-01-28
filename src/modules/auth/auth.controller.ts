@@ -1,4 +1,4 @@
-import { Controller,HttpCode, Query, Req } from '@nestjs/common';
+import { Controller,HttpCode, Query, Req, UsePipes } from '@nestjs/common';
 import { Request as ExpressRequest } from 'express';
 import { SignInDto } from './dto/signin.dto'
 import { Body, Post, } from '@nestjs/common';
@@ -9,13 +9,17 @@ import { AuthService } from './auth.service';
 import { UUID } from 'crypto';
 import { ModelCreationAttributes } from 'src/common/interface/IBase';
 import { User } from '../user/model/User.model';
-import { UserProjectService } from '../project/userProject.service';
+import { UserSecurityService } from 'src/utility/user-security/user-security.service';
+import { JoiValidationPipe } from 'src/common/pipes/schema.validation.pipe';
+import { ForgetPasswordDto, ForgetPasswordSchema } from './dto/forget.password.dto';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('auth')
 export class AuthController {
     constructor(
         private usersService: UserService,
         private authService: AuthService,
+        private userSecurityService: UserSecurityService,
     ) { }
 
     @Post('/signin')
@@ -38,7 +42,7 @@ export class AuthController {
     public async sendOtp(
         @Body() { resend, email }: { resend: boolean, email: string }
     ) {
-        return await this.authService.sendOtp({ resend, email })
+        return await this.userSecurityService.sendOtp({ resend, email })
     }
     @Post('/token')
     @HttpCode(200)
@@ -61,7 +65,26 @@ export class AuthController {
     private async handleOtp(
         @Body() { email, otp }: { email: string, otp: number }
     ) {
-        return await this.authService.verify({ email, otp })
+        return await this.userSecurityService.verify({ email, otp })
+    }
+
+    @Post('/forget-password')
+    @HttpCode(200)
+    @Throttle({ default: { limit: 3, ttl: 60000 } })
+    private async forgetPassword(
+        @Body() {email}: {email: string}
+    ) {
+        return await this.authService.forgotPassword(email)
+    }
+
+    @Post('/reset-password')
+    @HttpCode(200)
+    @Throttle({ default: { limit: 3, ttl: 60000 } })
+    @UsePipes(new JoiValidationPipe(ForgetPasswordSchema))
+    private async resetPassword(
+        @Body() model: ForgetPasswordDto
+    ) {
+        return await this.authService.resetPassword(model)
     }
 
 }
