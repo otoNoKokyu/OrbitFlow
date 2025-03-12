@@ -4,6 +4,7 @@ import {
     ConflictException,
     ExecutionContext,
     ForbiddenException,
+    HttpException,
     HttpStatus,
     InternalServerErrorException,
     NestInterceptor,
@@ -38,7 +39,6 @@ export class Interceptor<T> implements NestInterceptor<T, IResponse<T>> {
         cached: false,
         timestamp: new Date().toISOString(),
       };
-      
       switch (error.name) {
         case 'RESOURCE_CONFLICT':
           throw new ConflictException(errorObject);
@@ -51,7 +51,7 @@ export class Interceptor<T> implements NestInterceptor<T, IResponse<T>> {
         case 'NOT_FOUND': 
           throw new NotFoundException({...errorObject, statusCode: HttpStatus.NOT_FOUND})
         default:
-          console.log(error.message)
+          if(error instanceof HttpException) throw error
           throw new InternalServerErrorException({...errorObject})
       }
     }

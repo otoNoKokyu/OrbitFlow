@@ -18,7 +18,6 @@ export class Projects extends Model<Projects> {
 
   @Column({
     type: DataType.DATE,
-    allowNull: false,
   })
   start_date: Date;
 

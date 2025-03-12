@@ -13,6 +13,7 @@ import { UserSecurityService } from 'src/utility/user-security/user-security.ser
 import { JoiValidationPipe } from 'src/common/pipes/schema.validation.pipe';
 import { ForgetPasswordDto, ForgetPasswordSchema } from './dto/forget.password.dto';
 import { Throttle } from '@nestjs/throttler';
+import { userSchema } from './dto/signup.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -30,6 +31,7 @@ export class AuthController {
         return await this.authService.signIn(credentials)
     }
     @Post('/signUp')
+    @UsePipes(new JoiValidationPipe(userSchema))
     @HttpCode(201)
     private async signUp(
         @Body() data: ModelCreationAttributes<User> & {projectId:string}

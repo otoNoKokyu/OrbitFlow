@@ -1,24 +1,21 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Req, UsePipes, ValidationPipe } from '@nestjs/common';
 import { ProjectService } from './project.service';
-import { CreateProjectDto, ProjectsDto } from './dto/create-project.dto';
-import { UserProjectDTO } from './dto/create-user-project.dto';
-import { UpdateProjectDto } from './dto/update-project.dto';
+// import { CreateProjectDto, ProjectsDto } from './dto/create-project.dto';
 import { RoleEnum } from '../role/utility/roles.enum';
 import { Role } from 'src/decorators/role.decorator';
 import { Projects } from './entities/project.model';
-import { UserProjectService } from './userProject.service';
 import { EntityAttributes, ModelCreationAttributes } from 'src/common/interface/IBase';
-import { UserProject } from './entities/userprojects.model';
+import { JoiValidationPipe } from 'src/common/pipes/schema.validation.pipe';
+import { creatProjectSchema, fetchAllProjectSchmea } from './dto/project.dto';
 
 @Controller('project')
 export class ProjectController {
   constructor(
     private readonly projectService: ProjectService,
   ) {}
-
-  @Role([RoleEnum.PLATFORM_ADMIN])
+  @Role([RoleEnum.PLATFORM_ADMIN,RoleEnum.ADMIN])
   @Post('/')
-  @UsePipes(new ValidationPipe())
+  @UsePipes(new JoiValidationPipe(creatProjectSchema))
   public async create(
     @Body() body: ModelCreationAttributes<Projects>,
     @Req() { user }: { user: { userId: string; roleId: string } }
@@ -27,16 +24,9 @@ export class ProjectController {
       const project = await this.projectService.create(body,{userId,roleId});
       return project;
   }
-
-  // @Get('/userProjects')
-  // public async getUserProjects(
-  //   @Query() query: EntityAttributes<UserProject>
-  // ) {
-  //   const data = await this.userProjectService.findAll(query)
-  //   return data;
-  // }
   @Role([RoleEnum.ADMIN])
   @Get('/')
+  @UsePipes(new JoiValidationPipe(fetchAllProjectSchmea))
   public async getProjectsByFilter(
     @Query() query: EntityAttributes<Projects>
   ) {
