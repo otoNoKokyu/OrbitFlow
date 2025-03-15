@@ -11,7 +11,6 @@ export class UserSecurityService {
         private redisService: RedisService,
         private mailService: MailService,
     ) {}
-
     async sendOtp({ resend, email }: { resend: boolean, email: string }) {
         const resendOtp = Math.floor(10000 + Math.random() * 90000)
         const newDate = new Date(new Date().getTime() + 2 * 60 * 1000);

@@ -1,19 +1,17 @@
-import { Controller,HttpCode, Query, Req, UsePipes } from '@nestjs/common';
-import { Request as ExpressRequest } from 'express';
-import { SignInDto } from './dto/signin.dto'
+import { Controller,HttpCode, Req, UsePipes } from '@nestjs/common';
 import { Body, Post, } from '@nestjs/common';
 import { EligbleInviteRole } from 'src/modules/role/utility/roles.enum';
 import { Role } from 'src/decorators/role.decorator';
 import { UserService } from '../user/user.service';
 import { AuthService } from './auth.service';
-import { UUID } from 'crypto';
 import { ModelCreationAttributes } from 'src/common/interface/IBase';
 import { User } from '../user/model/User.model';
 import { UserSecurityService } from 'src/utility/user-security/user-security.service';
 import { JoiValidationPipe } from 'src/common/pipes/schema.validation.pipe';
-import { ForgetPasswordDto, ForgetPasswordSchema } from './dto/forget.password.dto';
 import { Throttle } from '@nestjs/throttler';
-import { userSchema } from './dto/signup.dto';
+import { ForgetPasswordSchema, SignInSchema, userSchema } from './validator/auth.validator';
+import { TForgetPassword, TInvite, TSendOtp, TSignIn } from './types/auth.types';
+import { TAppUser } from 'src/utility/utility.type';
 
 @Controller('auth')
 export class AuthController {
@@ -24,9 +22,10 @@ export class AuthController {
     ) { }
 
     @Post('/signin')
+    @UsePipes(new JoiValidationPipe(SignInSchema))
     @HttpCode(200)
     private async signIn(
-        @Body() credentials: SignInDto,
+        @Body() credentials: TSignIn,
     ) {
         return await this.authService.signIn(credentials)
     }
@@ -42,7 +41,7 @@ export class AuthController {
     @Post('/sendOtp')
     @HttpCode(200)
     public async sendOtp(
-        @Body() { resend, email }: { resend: boolean, email: string }
+        @Body() { resend, email }: TSendOtp
     ) {
         return await this.userSecurityService.sendOtp({ resend, email })
     }
@@ -57,10 +56,11 @@ export class AuthController {
     @HttpCode(200)
     @Role(EligbleInviteRole.Inviter)
     private async invite(
-        @Query() { roleId, pId }: { roleId: UUID, pId: string },
-        @Req() { user, body: { email } }: ExpressRequest & { user: any },
+        @Req() { user, body }: { user: TAppUser; body: TInvite },
     ) {
-        return await this.usersService.invite({ roleId, pId, email, username: user.username, userId: user.userId })
+        const {roleId,email,pId} = body
+        const {username,userId} = user
+        return await this.usersService.invite({ roleId, pId, email, username, userId })
     }
     @Post('/verify')
     @HttpCode(200)
@@ -74,7 +74,7 @@ export class AuthController {
     @HttpCode(200)
     @Throttle({ default: { limit: 3, ttl: 60000 } })
     private async forgetPassword(
-        @Body() {email}: {email: string}
+        @Body('email') email: string
     ) {
         return await this.authService.forgotPassword(email)
     }
@@ -84,9 +84,9 @@ export class AuthController {
     @Throttle({ default: { limit: 3, ttl: 60000 } })
     @UsePipes(new JoiValidationPipe(ForgetPasswordSchema))
     private async resetPassword(
-        @Body() model: ForgetPasswordDto
+        @Body() body: TForgetPassword
     ) {
-        return await this.authService.resetPassword(model)
+        return await this.authService.resetPassword(body)
     }
 
 }

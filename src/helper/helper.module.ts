@@ -1,5 +1,6 @@
 import { Module, Global } from '@nestjs/common';
-import { MiddlewareException, ServiceException } from './CustomError';
+import {  ServiceException } from './CustomError';
+import { TransactionManagerService } from './transaction.manager';
 
 @Global()
 @Module({
@@ -8,8 +9,9 @@ import { MiddlewareException, ServiceException } from './CustomError';
             provide: 'ServiceException',
             useClass: ServiceException
         },
-        MiddlewareException
+        
+        TransactionManagerService
     ],
-    exports: ['ServiceException',MiddlewareException],
+    exports: ['ServiceException',TransactionManagerService],
 })
 export class HelperModule { }

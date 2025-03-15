@@ -26,15 +26,6 @@ export class Projects extends Model<Projects> {
     allowNull: true,
   })
   end_date: Date;
-
-  // Uncomment if you want to use Sprints
-  // @ForeignKey(() => Sprints)
-  // @Column({
-  //   type: DataType.CHAR(36),
-  //   allowNull: true,
-  // })
-  // current_sprint_id: string;
-
   @Column({
     type: DataType.INTEGER,
     defaultValue: 0,
@@ -72,4 +63,10 @@ export class Projects extends Model<Projects> {
     allowNull: true,
   })
   updated_at: Date;
+  
+  @Column({
+    type: DataType.ARRAY(DataType.STRING),
+    allowNull: true,
+  })
+  issue_status: string[];
 }

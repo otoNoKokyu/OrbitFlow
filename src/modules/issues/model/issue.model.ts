@@ -1,0 +1,85 @@
+import {
+    Table,
+    Column,
+    Model,
+    DataType,
+    ForeignKey,
+    BelongsTo,
+  } from 'sequelize-typescript';
+  import { Projects } from 'src/modules/project/entities/project.model';
+import { User } from 'src/modules/user/model/User.model';
+  
+  @Table({ tableName: 'issues' })
+  export class Issue extends Model<Issue> {
+    @Column({
+      type: DataType.UUID,
+      defaultValue: DataType.UUIDV4,
+      primaryKey: true,
+    })
+    id: string;
+  
+    @Column({ type: DataType.STRING, allowNull: false })
+    name: string;
+  
+    @Column({ type: DataType.TEXT, allowNull: true })
+    description: string;
+  
+    @Column({ type: DataType.INTEGER, allowNull: true })
+    estimate: number;
+  
+    @Column({ type: DataType.INTEGER, allowNull: true })
+    remaining: number;
+  
+    @Column({ type: DataType.INTEGER, allowNull: true })
+    loggedTime: number;
+  
+    @Column({ type: DataType.ARRAY(DataType.STRING), allowNull: true })
+    attachments: string[];
+  
+    @ForeignKey(() => User)
+    @Column({ type: DataType.UUID, allowNull: true })
+    assigneeId: string;
+  
+    @BelongsTo(() => User, 'assigneeId')
+    assignee: User;
+  
+    @ForeignKey(() => User)
+    @Column({ type: DataType.UUID, allowNull: false })
+    reporterId: string;
+  
+    @BelongsTo(() => User, 'reporterId')
+    reporter: User;
+  
+    @Column({ type: DataType.STRING, allowNull: false })
+    status: string;
+  
+    @Column({ type: DataType.STRING, allowNull: false })
+    priority: string;
+  
+    @ForeignKey(() => Projects)
+    @Column({ type: DataType.UUID, allowNull: false })
+    projectId: string;
+  
+    @BelongsTo(() => Projects)
+    project: Projects;
+  
+    @Column({ type: DataType.UUID, allowNull: true })
+    sprintId: string;
+  
+    @Column({ type: DataType.DATE, allowNull: true })
+    dueDate: Date;
+  
+    @Column({
+      type: DataType.ENUM('task', 'subtask', 'epic', 'story'),
+      allowNull: false,
+    })
+    type: string;
+  
+    @ForeignKey(() => Issue)
+    @Column({ type: DataType.UUID, allowNull: true })
+    parentId: string;
+  
+    @BelongsTo(() => Issue)
+    parent: Issue;
+  }
+  

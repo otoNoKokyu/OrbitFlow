@@ -1,11 +1,7 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Req, UsePipes, ValidationPipe } from '@nestjs/common';
-import { ProjectService } from './project.service';
-// import { CreateProjectDto, ProjectsDto } from './dto/project.dto';
+import { Controller, Get, Body,   Query, Req, UsePipes, BadRequestException } from '@nestjs/common';
 import { fetchAllUserProjectSchema, userProjectSchema } from './dto/userProject.dto';
-import { UpdateProjectDto } from './dto/update-project.dto';
 import { RoleEnum } from '../role/utility/roles.enum';
 import { Role } from 'src/decorators/role.decorator';
-import { Projects } from './entities/project.model';
 import { UserProjectService } from './userProject.service';
 import { EntityAttributes, ModelCreationAttributes } from 'src/common/interface/IBase';
 import { UserProject } from './entities/userprojects.model';
@@ -31,8 +27,10 @@ export class UserProjectController extends BaseController<UserProject> {
   @UsePipes(new JoiValidationPipe(fetchAllUserProjectSchema))
   public async findAll(
     @Query() query: EntityAttributes<UserProject>,
-    @Req () {user}: any
+    @Req () req?: any
   ) {
-    return this.userProjectService.findAll({...query,userId:query.userId || user.userId, roleId: user.roleId})
+    if(!req.user && !req.user.userId && !req.user.roleId) throw new BadRequestException('no user found in request')
+    const{userId,roleId} = req.user
+    return this.userProjectService.findAll({...query,userId:query.userId || userId, roleId: roleId})
   }
 }
