@@ -1,5 +1,16 @@
-// import { UserDTO } from "src/modules/auth/validator/signup.dto";
+import Joi from 'joi';
 
-// export type EditUserDto = Omit<UserDTO, 'password_hash'>;
-// export type CredentialInfo = Pick<UserDTO, 'password_hash' | 'email' | 'phone_number'>;
-// export type PersonalInfo = Omit<EditUserDto, 'email'| 'phone_number' | 'username' | 'date_of_birth'> & {date_of_birth : Date};
+export const EditProfileSchema = Joi.object({
+    first_name: Joi.string().max(50).optional(),
+    last_name: Joi.string().max(50).optional(),
+    date_of_birth: Joi.date().optional(),
+    email: Joi.string().email().max(100).optional(),
+    gender: Joi.string().valid('Male', 'Female', 'Other').optional(),
+    phone_number: Joi.string().max(20).optional(),
+    address: Joi.string().optional(),
+    city: Joi.string().max(50).optional(),
+    state: Joi.string().max(50).optional(),
+    country: Joi.string().max(50).optional(),
+    zip_code: Joi.string().max(20).optional(),
+    profile_picture_url: Joi.string().uri().optional(),
+});

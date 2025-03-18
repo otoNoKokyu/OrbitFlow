@@ -9,11 +9,11 @@ import { ServiceException } from 'src/helper/CustomError';
 import { ERR_TYPE } from 'src/interface/CustomError';
 import { UserProjectService } from '../project/userProject.service';
 import { BaseService } from 'src/common/service.base';
-import { ModelCreationAttributes } from 'src/common/interface/IBase';
-import { isEmail } from 'class-validator';
+import {  ModelCreationAttributes } from 'src/common/interface/IBase';
 import { UserSecurityService } from 'src/utility/user-security/user-security.service';
-import { CredentialInfo, EditTEntityUser, PersonalInfo } from './types/user.types';
+import { EditTEntityUser } from './types/user.types';
 import { TInvite } from '../auth/types/auth.types';
+import _ from 'lodash'
 
 
 @Injectable()
@@ -25,7 +25,6 @@ export class UserService extends BaseService<User> {
         private userProjectService: UserProjectService,
         private mailService: MailService,
         private jwtService: JwtService,
-        private userSecurityService : UserSecurityService,
     ) {
         super(userRepository)
     }
@@ -100,24 +99,8 @@ export class UserService extends BaseService<User> {
         }, [])[0]
 
     }
-
-    async validateEmailUpdate(payload: { info: Partial<CredentialInfo>, model: EditTEntityUser }) {
-        if (!isEmail(payload.info.email)) return this.serviceException.throw('REQ_MALFORMED', 'invalid email!');
-        const userWithSameEmail = await this.findOne({ email: payload.model.email });
-        if (userWithSameEmail) this.serviceException.throw('RESOURCE_CONFLICT', 'user with same email already exists!');
-        await this.userSecurityService.sendOtp({resend: false, email: payload.info.email })
-    }
-
-    async updateUserEmail(payload: EditTEntityUser) {
-        const user = await this.findOne({user_id: payload.user_id});
-        if (!user) this.serviceException.throw('NOT_FOUND', 'user not found!');
-        this.validateEmailUpdate({ info: { email: user.email }, model: payload });
-        await this.userRepository.update({ email: payload.email }, { user_id: user.id });
-    }
-
-    async editUserProfile(payload: EditTEntityUser): Promise<void> {
-        this.updateUserEmail(payload);
-        const updatedPersonalInfo: PersonalInfo = { ...payload, date_of_birth: new Date(payload.date_of_birth) };
-        await this.userRepository.update(updatedPersonalInfo, { user_id: payload.user_id });
+    async update(filter:Pick<User,'user_id'>, payload: EditTEntityUser){
+        await this.userRepository.update(filter, payload);
+        return 'update successful'
     }
 }

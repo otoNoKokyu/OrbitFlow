@@ -78,7 +78,6 @@ export class AuthService {
 
 
     }
-
     async token(token: string) {
         const decoded: any = this.jwtService.verify(token, JwtEncodables.REFRESH_TOKEN)
         const doesExist = await this.userService.findOne({ user_id: decoded.userId })
@@ -92,7 +91,6 @@ export class AuthService {
         await this.userService.update({ access_token, refresh_token }, { user_id: doesExist.user_id })
         return { username: doesExist.username, access_token, refresh_token }
     }
-
     async forgotPassword(email: string): Promise<void> {
         const user = await this.userService.findOne({ email: email });
         if (!user) this.serviceException.throw('NOT_FOUND', 'user not found for this email')

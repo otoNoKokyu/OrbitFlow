@@ -7,6 +7,8 @@ import { EntityAttributes, ModelCreationAttributes } from 'src/common/interface/
 import { UserProject } from './entities/userprojects.model';
 import { BaseController } from 'src/common/controller.base';
 import { JoiValidationPipe } from 'src/common/pipes/schema.validation.pipe';
+import { TAppUser } from 'src/utility/utility.type';
+
 
 @Controller('userproject')
 export class UserProjectController extends BaseController<UserProject> {
@@ -26,11 +28,16 @@ export class UserProjectController extends BaseController<UserProject> {
   @Get('/')
   @UsePipes(new JoiValidationPipe(fetchAllUserProjectSchema))
   public async findAll(
-    @Query() query: EntityAttributes<UserProject>,
-    @Req () req?: any
-  ) {
-    if(!req.user && !req.user.userId && !req.user.roleId) throw new BadRequestException('no user found in request')
-    const{userId,roleId} = req.user
-    return this.userProjectService.findAll({...query,userId:query.userId || userId, roleId: roleId})
+    @Query() query?: EntityAttributes<UserProject>,
+    @Req() req?: { user?: TAppUser }
+  ){
+    if (!req?.user?.userId || !req.user.roleId) throw new BadRequestException('No user found in request');
+    const { userId, roleId } = req.user;
+    return this.userProjectService.findAll({
+      ...query,
+      userId: query?.userId || userId,
+      roleId: roleId,
+    });
   }
+  
 }
