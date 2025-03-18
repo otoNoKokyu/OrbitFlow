@@ -9,13 +9,12 @@ import { ServiceException } from 'src/helper/CustomError';
 import { ERR_TYPE } from 'src/interface/CustomError';
 import { UserProjectService } from '../project/userProject.service';
 import { BaseService } from 'src/common/service.base';
-import {  ModelCreationAttributes } from 'src/common/interface/IBase';
-import { UserSecurityService } from 'src/utility/user-security/user-security.service';
+import {  EntityAttributes, ModelCreationAttributes } from 'src/common/interface/IBase';
 import { EditTEntityUser } from './types/user.types';
 import { TInvite } from '../auth/types/auth.types';
 import _ from 'lodash'
 
-
+type UserUpdateFilterType = Pick<EntityAttributes<User>,'user_id'|'phone_number'|'email'>
 @Injectable()
 export class UserService extends BaseService<User> {
     constructor(
@@ -99,7 +98,7 @@ export class UserService extends BaseService<User> {
         }, [])[0]
 
     }
-    async update(filter:Pick<User,'user_id'>, payload: EditTEntityUser){
+    async update(filter:EditTEntityUser, payload: EditTEntityUser){
         await this.userRepository.update(filter, payload);
         return 'update successful'
     }

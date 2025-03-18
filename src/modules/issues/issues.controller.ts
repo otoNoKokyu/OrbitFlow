@@ -2,8 +2,6 @@ import {
     Controller,
     Get,
     Post,
-    Put,
-    Delete,
     Body,
     Param,
     ParseUUIDPipe,
@@ -22,7 +20,6 @@ import { Issue } from './model/issue.model';
     @Post()
     @UsePipes(new JoiValidationPipe(CreateIssueDto))
     create(@Body() createIssueDto:  ModelCreationAttributes<Issue>) {
-    //   return this.issuesService.create(createIssueDto);
     }
   
     @Get()

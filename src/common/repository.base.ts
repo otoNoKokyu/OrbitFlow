@@ -43,12 +43,20 @@ export class BaseRepository<T extends Model> implements IBaseRepository<T> {
     return data ? data.toJSON() : null;
   }
 
-  async update(filter: AtLeastOneAttribute<T>, body: AtLeastOneAttribute<T>, transaction?: Transaction): Promise<[affectedCount: number]> {
-    return await this.model.update(body, {
-      where: filter as unknown as WhereOptions<T>,
-      transaction,
+  async update(
+    filter: AtLeastOneAttribute<T>, 
+    body: AtLeastOneAttribute<T>, 
+    transaction?: Transaction
+  ): Promise<[affectedCount: number]> {
+    return await this.model.sequelize!.transaction(async (t) => {
+      const activeTransaction = transaction || t;
+      return await this.model.update(body, {
+        where: filter as unknown as WhereOptions<T>,
+        transaction: activeTransaction,
+      });
     });
   }
+  
 
   async delete(filter: AtLeastOneAttribute<T>, options?: DestroyOptions<T>, transaction?: Transaction): Promise<number> {
     return await this.model.destroy({

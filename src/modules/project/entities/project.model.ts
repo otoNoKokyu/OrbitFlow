@@ -1,4 +1,5 @@
-import { Table, Column, Model, DataType, ForeignKey } from 'sequelize-typescript';
+import { Table, Column, Model, DataType, ForeignKey, HasMany } from 'sequelize-typescript';
+import { IssueStatus } from 'src/modules/issues/model/issue_status.model';
 import { User } from 'src/modules/user/model/User.model';
 
 @Table({ tableName: 'projects' })
@@ -64,9 +65,6 @@ export class Projects extends Model<Projects> {
   })
   updated_at: Date;
   
-  @Column({
-    type: DataType.ARRAY(DataType.STRING),
-    allowNull: true,
-  })
-  issue_status: string[];
+  @HasMany(() => IssueStatus)
+  issueStatuses: IssueStatus[];
 }
