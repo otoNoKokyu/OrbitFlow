@@ -5,7 +5,8 @@ import {
   ModelStatic, 
   QueryTypes, 
   WhereOptions, 
-  Transaction 
+  Transaction, 
+  Sequelize
 } from 'sequelize';
 import { 
   IBaseRepository, 
@@ -22,11 +23,22 @@ export class BaseRepository<T extends Model> implements IBaseRepository<T> {
   constructor(model: ModelStatic<T>) {
     this.model = model;
   }
-
-  async create(body: ModelCreationAttributes<T>, transaction?: Transaction): Promise<ModelAttributes<T>> {
-    return await this.model.create(body as MakeNullishOptional<ModelCreationAttributes<T>>, { transaction });
+  get sequelize(): Sequelize {
+    return this.model.sequelize!;
   }
-
+  async create(
+    body: ModelCreationAttributes<T>, 
+    transaction?: Transaction
+  ): Promise<ModelAttributes<T>> {
+    if (transaction) {
+      return await this.model.create(body as MakeNullishOptional<ModelCreationAttributes<T>>, { transaction });
+    }
+    return await this.model.sequelize!.transaction(async (t) => {
+      return await this.model.create(body as MakeNullishOptional<ModelCreationAttributes<T>>, { transaction: t });
+    });
+  }
+  
+  
   async findAll(query?: Partial<ModelAttributes<T>>, transaction?: Transaction): Promise<ModelAttributes<T>[]> {
     const data = await this.model.findAll({
       where: query as unknown as WhereOptions<T>,
@@ -35,10 +47,9 @@ export class BaseRepository<T extends Model> implements IBaseRepository<T> {
     return data.length ? data.map(e => e.toJSON()) : [];
   }
 
-  async findOne(query: AtLeastOneAttribute<T>, transaction?: Transaction): Promise<ModelAttributes<T> | null> {
+  async findOne(query: AtLeastOneAttribute<T>): Promise<ModelAttributes<T> | null> {
     const data = await this.model.findOne({
       where: query as unknown as WhereOptions<T>,
-      transaction,
     });
     return data ? data.toJSON() : null;
   }

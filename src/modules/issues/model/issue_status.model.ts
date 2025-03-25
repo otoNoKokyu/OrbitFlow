@@ -1,7 +1,7 @@
-import { Table, Column, Model, DataType, ForeignKey } from 'sequelize-typescript';
+import { Table, Column, Model, DataType, ForeignKey, AllowNull } from 'sequelize-typescript';
 import { Projects } from 'src/modules/project/entities/project.model';
 
-@Table({ tableName: 'issue_statuses' })
+@Table({ tableName: 'issue_status' })
 export class IssueStatus extends Model<IssueStatus> {
   @Column({
     type: DataType.UUID,
@@ -15,6 +15,12 @@ export class IssueStatus extends Model<IssueStatus> {
     allowNull: false,
   })
   status: string;
+
+  @Column({
+    type: DataType.NUMBER,
+    allowNull:false
+  })
+  level:number;
 
   @ForeignKey(() => Projects)
   @Column({

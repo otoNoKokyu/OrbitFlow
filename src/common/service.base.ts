@@ -10,6 +10,12 @@ import { Model } from 'sequelize-typescript';
 import { BaseRepository } from './repository.base';
 import { DestroyOptions } from 'sequelize';
 
+type Pagination<T> = Promise<{
+  data: T[];
+  totalRecords: number;
+  totalPages: number;
+  currentPage: number;
+}>;
 @Injectable()
 export class BaseService<T extends Model<any, any>> implements IBaseService<T> {
   constructor(private readonly repository: BaseRepository<T>) {}
@@ -18,7 +24,7 @@ export class BaseService<T extends Model<any, any>> implements IBaseService<T> {
     return await this.repository.create(body);
   }
 
-  async findAll(query?: EntityAttributes<T>): Promise<ModelAttributes<T>[]> {
+  async findAll(query?: EntityAttributes<T>): Promise<any>{
     return await this.repository.findAll(query);
   }
 

@@ -17,7 +17,6 @@ export class UserProjectController extends BaseController<UserProject> {
 
   @Role([RoleEnum.ADMIN])
   @UsePipes(new JoiValidationPipe(userProjectSchema))
-  
   public async create(
     @Body() body: ModelCreationAttributes<UserProject>,
   ) {
@@ -31,7 +30,7 @@ export class UserProjectController extends BaseController<UserProject> {
     @Query() query?: EntityAttributes<UserProject>,
     @Req() req?: { user?: TAppUser }
   ){
-    if (!req?.user?.userId || !req.user.roleId) throw new BadRequestException('No user found in request');
+    if (!req?.user?.userId) throw new BadRequestException('No user found in request');
     const { userId, roleId } = req.user;
     return this.userProjectService.findAll({
       ...query,

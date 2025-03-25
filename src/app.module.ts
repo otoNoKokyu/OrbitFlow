@@ -19,6 +19,11 @@ import { HelperModule } from './helper/helper.module';
 import { MiddlewareModule } from './middlewares/middleware.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { Issue } from './modules/issues/model/issue.model';
+import { Comment }  from './modules/comment/model/comment.model'
+import { IssueStatus } from './modules/issues/model/issue_status.model';
+import { IssuesModule } from './modules/issues/issues.module';
+import { CommentModule } from './modules/comment/comment.module';
+import { CommentMention } from './modules/comment/model/comment_mentions.model';
 
 @Module({
   imports: [
@@ -42,7 +47,7 @@ import { Issue } from './modules/issues/model/issue.model';
         username: configServce.get("DB_USERNAME"),
         password: configServce.get("DB_PASSWORD"),
         database: configServce.get("DB_DATABASE"),
-        models: [User,Roles,Projects,UserProject, Issue],
+        models: [User,Roles,Projects,UserProject, Issue,IssueStatus,Comment,CommentMention],
         synchronize: true,
         pool:{
           max: 5,
@@ -63,14 +68,16 @@ import { Issue } from './modules/issues/model/issue.model';
     }),
     ThrottlerModule.forRoot([{
       ttl: 60000,
-      limit: 5,
+      limit: 500,
     }]),
     UserModule,
     MiddlewareModule,
     HelperModule,
     AuthModule,
     RoleModule,
-    ProjectModule
+    ProjectModule,
+    IssuesModule,
+    CommentModule
   ],
   controllers: [AppController],
   providers: [AppService,

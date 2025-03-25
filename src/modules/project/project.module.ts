@@ -8,13 +8,14 @@ import { ProjectRepository } from './project.repository';
 import { UserProjectRepository } from './userProject.repository';
 import { UserProjectService } from './userProject.service';
 import { UserProjectController } from './userProject.controller';
+import { IssueStatusRepository } from '../issues/issueStatus.repository';
 
 @Module({
   imports:[
     SequelizeModule.forFeature([Projects,UserProject])
 ],
   controllers: [ProjectController, UserProjectController],
-  providers: [ProjectService,ProjectRepository, UserProjectRepository,UserProjectService],
+  providers: [ProjectService,ProjectRepository, UserProjectRepository,UserProjectService,IssueStatusRepository],
   exports: [ProjectService,UserProjectService]
 })
 export class ProjectModule {}

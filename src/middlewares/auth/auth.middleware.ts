@@ -10,7 +10,7 @@ export class AuthMiddleware implements NestMiddleware {
         private roleService: RoleService,
     ) {}
 
-    async use(req: Request & {user:any}, next: NextFunction) {
+    async use(req: Request & {user:any},res: Response, next: NextFunction) {
         const authToken = req.headers['authorization']?.split(' ')[1];
         if (!authToken) throw  new UnauthorizedException('Access denied: Token not found')
         try {
@@ -20,10 +20,9 @@ export class AuthMiddleware implements NestMiddleware {
              */
             if (data) {
                 const userRole = await this.roleService.findOne({role_id: data?.role})
-                delete data.role
-                req.user = {role: userRole?.role, ...data };
-                return next();
+                req.user = {role: userRole?.role, roleId:data.role, ...data };
             }
+            return next()
 
         } catch (e) {
             throw new UnauthorizedException(e.message)
