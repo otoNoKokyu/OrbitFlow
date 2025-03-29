@@ -10,12 +10,6 @@ export const CommentSchema = Joi.object({
     'string.max': 'Content cannot exceed 5000 characters.',
     'any.required': 'Content is required.'
   }),
-  createdAt: Joi.date().optional().messages({
-    'date.base': 'Created At must be a valid date.'
-  }),
-  updatedAt: Joi.date().optional().messages({
-    'date.base': 'Updated At must be a valid date.'
-  }),
   mentions: Joi.array().items(Joi.string().uuid()).optional().allow(null),
 });
 export const fetchCommentSchema = CommentSchema.fork(
@@ -23,3 +17,8 @@ export const fetchCommentSchema = CommentSchema.fork(
   (schema) => schema.optional()
 )
 
+export const updateCommentSchema = Joi.object({
+  content: Joi.string().required(),
+  mentions: Joi.array().items(Joi.string().uuid()).optional().allow(null),
+
+})

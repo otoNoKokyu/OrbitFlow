@@ -9,6 +9,7 @@ import {
   BeforeSave,
   BeforeUpdate,
   BeforeValidate,
+  BeforeCreate,
 } from 'sequelize-typescript';
 import { Projects } from 'src/modules/project/entities/project.model';
 import { User } from 'src/modules/user/model/User.model';
@@ -25,6 +26,9 @@ export class Issue extends Model<Issue> {
 
   @Column({ type: DataType.STRING, allowNull: false })
   name: string;
+
+  @Column({ type: DataType.STRING, allowNull: false })
+  projectIssueId: string;
 
   @Column({ type: DataType.TEXT, allowNull: true })
   description: string;
@@ -89,6 +93,5 @@ export class Issue extends Model<Issue> {
 
   @HasMany(() => Comment, 'issue_id')
   comments: Comment[];
-
 
 }

@@ -37,4 +37,15 @@ export interface IBaseRepository<T extends Model<any, any>>  {
   rawQuery(query: string): Promise<ModelAttributes<T>[]>;
 }
 
-export interface IBaseController<Y extends Model<any, any>> extends IBase<Y> {}
+export interface IBaseController<Y extends Model<any, any>> {
+  create(body: ModelCreationAttributes<Y>): Promise<ModelAttributes<Y>>;
+  findById(id: string): Promise<ModelAttributes<Y>| null>;
+  update(id: string, body: AtLeastOneAttribute<Y>):  Promise<string>;
+  delete(id: string, options?: DestroyOptions<Y>): Promise<string>;
+  findAll(query?: EntityAttributes<Y>): Promise<ModelAttributes<Y>[] | { 
+    data: Y[]; 
+    totalRecords: number; 
+    totalPages: number; 
+    currentPage: any; 
+  }>;
+}

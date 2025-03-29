@@ -12,11 +12,20 @@ export class BaseController<T extends Model<any, any>> implements IBaseControlle
   }
   @Get('/')
   async findAll(
-    @Query() query?: EntityAttributes<T>,
-    @Req() req?: any, 
-): Promise<ModelAttributes<T>[]> {
+    @Query() query?: EntityAttributes<T> & { page: number; limit: number },
+    @Req() req?: any,
+  ): Promise<
+    ModelAttributes<T>[] | { 
+      data: T[]; 
+      totalRecords: number; 
+      totalPages: number; 
+      currentPage: any; 
+    }
+  > {
     return this.service.findAll(query);
   }
+  
+  
   @Get(':id')
   async findById(@Param('id') id: string): Promise<ModelAttributes<T>> {
     return this.service.findOne({ id } as unknown as AtLeastOneAttribute<T>);

@@ -24,9 +24,13 @@ import { IssueStatus } from './modules/issues/model/issue_status.model';
 import { IssuesModule } from './modules/issues/issues.module';
 import { CommentModule } from './modules/comment/comment.module';
 import { CommentMention } from './modules/comment/model/comment_mentions.model';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { NotificationModule } from './modules/notification/notification.module';
+
 
 @Module({
   imports: [
+    EventEmitterModule.forRoot(),
     ConfigModule.forRoot(),
     MailerModule.forRoot({
       transport: {
@@ -77,6 +81,7 @@ import { CommentMention } from './modules/comment/model/comment_mentions.model';
     RoleModule,
     ProjectModule,
     IssuesModule,
+    NotificationModule,
     CommentModule
   ],
   controllers: [AppController],

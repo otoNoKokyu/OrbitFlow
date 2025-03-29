@@ -40,6 +40,12 @@ export class Projects extends Model<Projects> {
   })
   owned_by: string;
 
+  @Column({
+    type: DataType.CHAR(36),
+    allowNull: false,
+  })
+  projectShortName: string;
+
   @ForeignKey(() => User)
   @Column({
     type: DataType.CHAR(36),
@@ -67,4 +73,5 @@ export class Projects extends Model<Projects> {
   
   @HasMany(() => IssueStatus)
   issueStatuses: IssueStatus[];
+  
 }

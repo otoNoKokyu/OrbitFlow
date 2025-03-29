@@ -1,12 +1,10 @@
-import { Body, Controller, Get, Post, Put, Query, Req, UsePipes } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Put, Query, Req, UsePipes } from '@nestjs/common';
 import { CommentService } from './comment.service';
 import { BaseController } from 'src/common/controller.base';
 import { Comment } from './model/comment.model';
-import { Optional, InferCreationAttributes, InferAttributes } from 'sequelize';
-import { NullishPropertiesOf } from 'sequelize/types/utils';
-import { EntityAttributes, ModelCreationAttributes } from 'src/common/interface/IBase';
+import { AtLeastOneAttribute, EntityAttributes, ModelCreationAttributes } from 'src/common/interface/IBase';
 import { JoiValidationPipe } from 'src/common/pipes/schema.validation.pipe';
-import { CommentSchema, fetchCommentSchema } from './validator/comment.validator';
+import { CommentSchema, fetchCommentSchema, updateCommentSchema } from './validator/comment.validator';
 import { TAppUser } from 'src/utility/utility.type';
 
 @Controller('comment')
@@ -29,14 +27,20 @@ export class CommentController extends BaseController<Comment> {
     }
     @Get('/')
     @UsePipes(new JoiValidationPipe(fetchCommentSchema))
-    findAll(
+    public async findAll(
         @Query() query?: EntityAttributes<Comment>,
     ) {
-        return this.commentService.findAll(query);
+        return await this.commentService.findAll(query);
     }
 
-    @Put('/')
-    @UsePipes()
+    @Put('/:id')
+    @UsePipes(new JoiValidationPipe(updateCommentSchema))
+    public async update(
+      @Param() id:string,
+      @Body() body:AtLeastOneAttribute<Comment>
+    ){
+      return await super.update(id,body)
+    }
 
 
 }

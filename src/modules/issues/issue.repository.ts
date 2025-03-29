@@ -3,6 +3,7 @@ import { Issue } from './model/issue.model';
 import { BaseRepository } from 'src/common/repository.base';
 import { Comment } from '../comment/model/comment.model';
 import { AtLeastOneAttribute, EntityAttributes, ModelAttributes } from 'src/common/interface/IBase';
+import { User } from '../user/model/User.model';
 
 @Injectable()
 export class IssueRepository extends BaseRepository<Issue> {
@@ -24,14 +25,25 @@ export class IssueRepository extends BaseRepository<Issue> {
       currentPage: page,
     };
   }
-  async findOne(query: AtLeastOneAttribute<Issue>,attributes?: Array<keyof Partial<EntityAttributes<Issue>>>):Promise<ModelAttributes<Issue>> {
-    const queryFilter = 
-      {
-        where: query,
-        include: [Comment],
-      }
+  async findOne(
+    query: AtLeastOneAttribute<Issue>,
+    populatedFileds? : Array< 'assignee' | 'reporter'>,
+    attributes?: Array<keyof Partial<EntityAttributes<Issue>>>,
+  ):Promise<ModelAttributes<Issue>> {
+      const queryFilter: any = {
+      where: query,
+      include: [{ model: Comment, as: 'comments' }],
+    };
+  
+    if (populatedFileds?.includes('assignee')) {
+      queryFilter.include.push({ model: User, as: 'assignee' });
+    }
     
-    if(attributes?.length) query['attributes'] = attributes
+    if (populatedFileds?.includes('reporter')) {
+      queryFilter.include.push({ model: User, as: 'reporter' });
+    }
+  
+    if(attributes?.length) queryFilter['attributes'] = attributes
     return await this.model.findOne(queryFilter);
   }
 }

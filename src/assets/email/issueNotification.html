@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JIRA Issue Notification</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', sans-serif;
+            background-color: #f4f5f7;
+            padding: 20px;
+        }
+        .email-container {
+            max-width: 600px;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #0052cc, #003b99);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 12px 12px 0 0;
+        }
+        .content {
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .content p {
+            margin: 8px 0;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 20px;
+            background: #0052cc;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        .button:hover {
+            background: #003b99;
+        }
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: gray;
+            margin-top: 20px;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container" style="font-size: medium;">
+        {{#projectIssueId}}<div class="header">🔔 Issue Updated: {{projectIssueId}}</div>{{/projectIssueId}}
+        <div class="content">
+            {{#name}}<p><strong>📌 Issue:</strong> {{title}}</p>{{/title}}
+            {{#assignee}}<p><strong>👤 Assignee:</strong> {{assignee}}</p>{{/assignee}}
+            {{#reporter}}<p><strong>📢 Reporter:</strong> {{reporter}}</p>{{/reporter}}
+            {{#updatedOn}}<p><strong>📅 Updated On:</strong> {{updatedOn}}</p>{{/updatedOn}}
+            <div style="text-align: center; margin-top: 20px; color: #f4f5f7;">
+                <a href="www.jira.com/{{projectIssueId}}" class="button">🔍 View Issue</a>
+            </div>
+        </div>
+        <div class="footer">
+            This is an automated email from Orbitflow. Please do not reply.
+        </div>
+    </div>
+</body>
+</html>

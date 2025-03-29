@@ -13,7 +13,7 @@ export class ProjectController {
   constructor(
     private readonly projectService: ProjectService,
   ) {}
-  @Role([RoleEnum.PLATFORM_ADMIN,RoleEnum.ADMIN])
+  // @Role([RoleEnum.PLATFORM_ADMIN,RoleEnum.ADMIN])
   @Post('/')
   @UsePipes(new JoiValidationPipe(creatProjectSchema))
   public async create(

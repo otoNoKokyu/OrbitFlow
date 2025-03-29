@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
+import { NotificationIssueType } from 'src/modules/notification/types/notification.types';
 const fs = require('fs');
 const path = require('path');
 @Injectable()
@@ -42,6 +43,28 @@ export class MailService {
       to: email,
       subject: `Reset Password >> Reset Password for your Orbitflow Account`,
       html: htmlContent
+    });
+  }
+  async sendIssueNotification(recipient: string, issue: Partial<NotificationIssueType>) {
+    const htmlTemplate = fs.readFileSync(
+      path.join(__dirname, '../../assets/email/issueNotification.html'),
+      'utf-8',
+    );
+
+    let htmlContent = htmlTemplate;
+
+    Object.keys(issue).forEach((key) => {
+      const placeholder = `{{${key}}}`;
+      const value = issue[key] ? String(issue[key]) : ''; 
+      htmlContent = htmlContent.replace(new RegExp(placeholder, 'g'), value);
+    });
+
+    htmlContent = htmlContent.replace(/{{[^}]+}}/g, '');
+
+    await this.mailService.sendMail({
+      to: recipient,
+      subject: `Orbitflow Issue Update: ${issue.projectIssueId || 'No ID'}`,
+      html: htmlContent,
     });
   }
 }

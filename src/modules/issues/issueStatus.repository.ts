@@ -7,24 +7,14 @@ export class IssueStatusRepository extends BaseRepository<IssueStatus> {
   constructor() {
     super(IssueStatus)
   }
-  async createDefaultProjectStatus (projectId:string) {
-    const defaultStatus = [{
-      status: 'To Do',
-      projectId,
-      level: 0
-    },
-    {
-      status: 'In Progress',
-      projectId,
-      level: 1
-
-    },
-    {
-      status: 'On Review',
-      projectId,
-      level: 2
-    },]
-    return await this.model.bulkCreate(defaultStatus);
-
+  async createDefaultProjectStatus(projectId: string, transaction?: any) {
+    const defaultStatus = [
+      { status: 'To Do', projectId, level: 0 },
+      { status: 'In Progress', projectId, level: 1 },
+      { status: 'On Review', projectId, level: 2 },
+    ];
+  
+    return await this.model.bulkCreate(defaultStatus, { transaction });
   }
+  
 }

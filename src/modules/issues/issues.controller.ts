@@ -17,10 +17,13 @@ import {  EntityAttributes, ModelCreationAttributes } from 'src/common/interface
 import { Issue } from './model/issue.model';
 import { TAppUser } from 'src/utility/utility.type';
 import { TUpdateIssue } from './types/types.issues';
+import { BaseController } from 'src/common/controller.base';
 
 @Controller('issues')
-export class IssuesController {
-  constructor(private readonly issuesService: IssuesService) { }
+export class IssuesController extends BaseController<Issue> {
+  constructor(private readonly issuesService: IssuesService) {
+    super(issuesService)
+   }
 
   @Post('/')
   @UsePipes(new JoiValidationPipe(CreateIssueSchema))
@@ -30,26 +33,25 @@ export class IssuesController {
 
   @Get('/')
   @UsePipes(new JoiValidationPipe(fetchAllIssueSchema))
-  findAll(
+  async findAll(
     @Query() query?: EntityAttributes<Issue> & { page: number, limit: number },
-    @Req() req?: { user?: TAppUser }
   ) {
     const { page = 1, limit = 10, ...filters } = query || {};
-    return this.issuesService.findAll(filters,page,limit);
+    return await this.issuesService.findAll(filters,page,limit);
   }
 
   @Get(':id')
   async findOne(@Param('id', ParseUUIDPipe) id: string) {
-      return await this.issuesService.findOne({id});
+      return await super.findById(id);
   }
 
   @Put(':id')
   @UsePipes(new JoiValidationPipe(updateIssueSchema))
-  update(
+  async update(
     @Param('id') id: string,
     @Body() updateIssue: TUpdateIssue,
   ) {
-    return this.issuesService.update({id}, updateIssue);
+    return await this.issuesService.update({id}, updateIssue);
   }
 
   // @Delete(':id')
