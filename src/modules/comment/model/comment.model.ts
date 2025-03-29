@@ -1,6 +1,7 @@
-import { BelongsTo, Column, DataType, ForeignKey, Model, Table } from "sequelize-typescript";
+import { BelongsTo, Column, DataType, ForeignKey, HasMany, Model, Table } from "sequelize-typescript";
 import { Issue } from "src/modules/issues/model/issue.model";
 import { User } from "src/modules/user/model/User.model";
+import { CommentMention } from "./comment_mentions.model";
 
 @Table({ tableName: 'comments',timestamps:true })
 export class Comment extends Model<Comment> {
@@ -37,4 +38,7 @@ export class Comment extends Model<Comment> {
 
   @Column({ type: DataType.DATE })
   updatedAt: Date;
+  
+  @HasMany(() => CommentMention)
+  mentions: CommentMention[];
 }

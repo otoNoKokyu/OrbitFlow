@@ -6,7 +6,7 @@
     <title>JIRA Issue Notification</title>
     <style>
         body {
-            font-family: 'Helvetica Neue', sans-serif;
+            font-family: 'Arial', sans-serif;
             background-color: #f4f5f7;
             padding: 20px;
         }
@@ -14,35 +14,54 @@
             max-width: 600px;
             background: white;
             padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border: 1px solid #ddd;
         }
         .header {
-            background: linear-gradient(135deg, #0052cc, #003b99);
+            background: #0052cc;
             color: white;
             padding: 15px;
-            text-align: center;
-            font-size: 20px;
+            text-align: left;
+            font-size: 18px;
             font-weight: bold;
-            border-radius: 12px 12px 0 0;
+            border-radius: 6px 6px 0 0;
         }
         .content {
             padding: 20px;
-            line-height: 1.6;
+            font-size: 14px;
+            color: #333;
         }
         .content p {
-            margin: 8px 0;
+            margin: 10px 0;
+        }
+        .updates-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .updates-table th, .updates-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .updates-table th {
+            background-color: #f4f5f7;
+        }
+        .highlight-old { color: red; }
+        .highlight-new { color: green; font-weight: bold; }
+        .button-container {
+            text-align: center;
+            margin-top: 20px;
         }
         .button {
             display: inline-block;
-            padding: 12px 20px;
+            padding: 10px 18px;
             background: #0052cc;
             color: white;
             text-decoration: none;
-            border-radius: 6px;
+            border-radius: 4px;
             font-weight: bold;
-            transition: background 0.3s;
         }
         .button:hover {
             background: #003b99;
@@ -58,14 +77,35 @@
     </style>
 </head>
 <body>
-    <div class="email-container" style="font-size: medium;">
-        {{#projectIssueId}}<div class="header">🔔 Issue Updated: {{projectIssueId}}</div>{{/projectIssueId}}
+    <div class="email-container">
+        {{#if projectIssueId}}
+            <div class="header">🔔 Issue Updated: {{projectIssueId}}</div>
+        {{/if}}
         <div class="content">
-            {{#name}}<p><strong>📌 Issue:</strong> {{title}}</p>{{/title}}
-            {{#assignee}}<p><strong>👤 Assignee:</strong> {{assignee}}</p>{{/assignee}}
-            {{#reporter}}<p><strong>📢 Reporter:</strong> {{reporter}}</p>{{/reporter}}
-            {{#updatedOn}}<p><strong>📅 Updated On:</strong> {{updatedOn}}</p>{{/updatedOn}}
-            <div style="text-align: center; margin-top: 20px; color: #f4f5f7;">
+            <p><strong>📌 Issue:</strong> {{title}}</p>
+            <p><strong>👤 Assignee:</strong> {{assignee}}</p>
+            <p><strong>📢 Reporter:</strong> {{reporter}}</p>
+            <p><strong>📅 Updated On:</strong> {{updatedOn}}</p>
+
+            {{#if changes}}
+                <h3>🔄 Changes:</h3>
+                <table class="updates-table">
+                    <tr>
+                        <th>Field</th>
+                        <th>Previous Value</th>
+                        <th>New Value</th>
+                    </tr>
+                    {{#each changes}}
+                        <tr>
+                            <td><strong>{{field}}</strong></td>
+                            <td class="highlight-old">{{oldValue}}</td>
+                            <td class="highlight-new">{{newValue}}</td>
+                        </tr>
+                    {{/each}}
+                </table>
+            {{/if}}
+
+            <div class="button-container">
                 <a href="www.jira.com/{{projectIssueId}}" class="button">🔍 View Issue</a>
             </div>
         </div>

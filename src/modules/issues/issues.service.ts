@@ -8,6 +8,9 @@ import { AtLeastOneAttribute, EntityAttributes, ModelCreationAttributes } from '
 import { NotificationService } from '../notification/notification.service';
 import { NotificationType } from '../notification/types/notification.types';
 import { ProjectRepository } from '../project/project.repository';
+import { RedisService } from 'src/utility/redis/redis.service';
+import _ from'lodash'
+import { isEmptyObject } from 'src/utility/NullishUtills';
 
 
 @Injectable()
@@ -15,8 +18,9 @@ export class IssuesService extends BaseService<Issue> {
   constructor(
     private IssueRepository: IssueRepository,
     private projectRepository: ProjectRepository,
-    @Inject('ServiceException') private serviceException: ServiceException<ERR_TYPE>,
-    private readonly notificationService: NotificationService
+    @Inject('serviceException') private serviceException: ServiceException<ERR_TYPE>,
+    private readonly notificationService: NotificationService,
+    private readonly redisService: RedisService
 
   ) {
     super(IssueRepository)
@@ -38,16 +42,31 @@ export class IssuesService extends BaseService<Issue> {
 
     const count = await Issue.count({ where: { projectId: issue.projectId } });
     return `${prefix}-${count + 1}`;
+  }
 
-
+  private async findIssueForNotification (id:string) {
+    return await this.IssueRepository.findOne(
+      {id},
+      ['assignee','reporter'],
+      ['projectIssueId','name','status','updatedAt'])
+  }
+  private findDiffForIssueNotification(currVal: Partial<Issue>, prevValue: Partial<Issue>) {
+    return _.reduce(prevValue, (result, value, key) => {
+      if (_.has(currVal, key) && !_.isEqual(value, currVal[key])) {
+        result[key] = { old: value, new: currVal[key] }; 
+      }
+      return result;
+    }, {});
   }
   async create(data: ModelCreationAttributes<Issue>) {
     const existingIssue = await this.IssueRepository.findOne({ name: data.name, projectId: data.projectId, type: data.type })
     if (existingIssue) throw this.serviceException.throw('RESOURCE_CONFLICT', 'Issue already exists')
     const projectIssueId = await this.getIssueProjectId(data)
     const issue = await this.IssueRepository.create({...data,projectIssueId})
-    const popultaedIssue = await this.IssueRepository.findOne({id:issue.id},['assignee','reporter'])
-    await this.notificationService.recieveNotification(NotificationType.ISSUE_CHANGE, popultaedIssue, popultaedIssue.assignee.email)
+    const popultaedIssue = await this.findIssueForNotification(issue.id)
+      
+    if(popultaedIssue) this.redisService.setTempData(issue.id, popultaedIssue,7200)    
+    await this.notificationService.recieveIssueNotification(popultaedIssue.assignee.email,popultaedIssue)
     return issue;
   }
   async findAll(query: EntityAttributes<Issue>, page = 1, limit = 10) {
@@ -55,15 +74,37 @@ export class IssuesService extends BaseService<Issue> {
   }
   async update(
     filter: AtLeastOneAttribute<Issue>,
-    body: AtLeastOneAttribute<Issue>
+    body: AtLeastOneAttribute<Issue>,
   ) {
+    let storedData  = await this.redisService.getTempData(filter.id)
+    if(!storedData) storedData = await this.findIssueForNotification(filter.id)
+    const issueChnages = this.findDiffForIssueNotification(body,storedData)
+
     if (body.loggedTime || body.estimate) {
       const issue = await this.IssueRepository.findOne({ id: filter.id },null, ['loggedTime', 'estimate'])
       const remaining = (body?.estimate ?? (issue.estimate || 0)) - (body?.loggedTime ?? (issue?.loggedTime || 0))
       body.remaining = remaining
     }
     const [affectedCount] = await this.IssueRepository.update(filter, body);
-    if (affectedCount > 0) return 'update successful'
+    if (affectedCount > 0) {
+      await this.notificationService.recieveIssueNotification(storedData.assignee.email,body,storedData)
+      return 'update successful'
+    }
     else return 'update unsuccessful'
+  }
+  private async resolveNotificationRecipient(body: EntityAttributes<Issue>){
+    const recipientEmails = []
+    const {assignee,reporter,comments} = body
+    if(!isEmptyObject(assignee)) recipientEmails.push(assignee.email)
+    if(!isEmptyObject(reporter)) recipientEmails.push(reporter.email)
+    if(comments.length){
+      comments.forEach((e)=>{
+        e.mentions.forEach(f=>{
+          recipientEmails.push(f.mentionedUser.email)
+        })
+      })
+    }
+    return recipientEmails
+    
   }
 }

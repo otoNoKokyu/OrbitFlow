@@ -3,6 +3,8 @@ import { MailerService } from '@nestjs-modules/mailer';
 import { NotificationIssueType } from 'src/modules/notification/types/notification.types';
 const fs = require('fs');
 const path = require('path');
+import handlebars from 'handlebars';
+
 @Injectable()
 export class MailService {
 
@@ -45,26 +47,41 @@ export class MailService {
       html: htmlContent
     });
   }
-  async sendIssueNotification(recipient: string, issue: Partial<NotificationIssueType>) {
+  async sendIssueNotification(
+    recipient: string, 
+    issue: Partial<NotificationIssueType>, 
+    previousIssue?: Partial<NotificationIssueType> 
+  ) {
     const htmlTemplate = fs.readFileSync(
       path.join(__dirname, '../../assets/email/issueNotification.html'),
       'utf-8',
     );
-
-    let htmlContent = htmlTemplate;
-
-    Object.keys(issue).forEach((key) => {
-      const placeholder = `{{${key}}}`;
-      const value = issue[key] ? String(issue[key]) : ''; 
-      htmlContent = htmlContent.replace(new RegExp(placeholder, 'g'), value);
+  
+    handlebars.registerHelper('ifChanged', function (key, options) {
+      const oldValue = previousIssue?.[key];
+      const newValue = issue[key];
+  
+      if (
+        oldValue !== newValue &&
+        oldValue != null && oldValue !== '' &&
+        newValue != null && newValue !== ''
+      ) {
+        return options.fn({
+          old: oldValue, 
+          new: newValue
+        });
+      }
+      return options.inverse(this);
     });
-
-    htmlContent = htmlContent.replace(/{{[^}]+}}/g, '');
-
+  
+    const template = handlebars.compile(htmlTemplate);
+  
+    const htmlContent = template(issue);
     await this.mailService.sendMail({
       to: recipient,
-      subject: `Orbitflow Issue Update: ${issue.projectIssueId || 'No ID'}`,
+      subject: `Orbitflow Issue Update: ${issue.projectIssueId || previousIssue.projectIssueId}`,
       html: htmlContent,
     });
   }
+  
 }

@@ -4,6 +4,7 @@ import { BaseRepository } from 'src/common/repository.base';
 import { Comment } from '../comment/model/comment.model';
 import { AtLeastOneAttribute, EntityAttributes, ModelAttributes } from 'src/common/interface/IBase';
 import { User } from '../user/model/User.model';
+import { CommentMention } from '../comment/model/comment_mentions.model';
 
 @Injectable()
 export class IssueRepository extends BaseRepository<Issue> {
@@ -30,9 +31,27 @@ export class IssueRepository extends BaseRepository<Issue> {
     populatedFileds? : Array< 'assignee' | 'reporter'>,
     attributes?: Array<keyof Partial<EntityAttributes<Issue>>>,
   ):Promise<ModelAttributes<Issue>> {
-      const queryFilter: any = {
+    const queryFilter: any = {
       where: query,
-      include: [{ model: Comment, as: 'comments' }],
+      include: [
+        {
+          model: Comment,
+          as: 'comments',
+          include: [
+            {
+              model: CommentMention,
+              as: 'mentions', 
+              include: [
+                {
+                  model: User,
+                  as: 'mentionedUser',
+                  attributes: ['username', 'email', 'phone_number'],
+                },
+              ],
+            },
+          ],
+        },
+      ],
     };
   
     if (populatedFileds?.includes('assignee')) {
@@ -44,6 +63,7 @@ export class IssueRepository extends BaseRepository<Issue> {
     }
   
     if(attributes?.length) queryFilter['attributes'] = attributes
-    return await this.model.findOne(queryFilter);
+    const issue =  await this.model.findOne(queryFilter)
+    return issue?.toJSON();
   }
 }

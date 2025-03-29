@@ -1,4 +1,4 @@
-import { Table, Column, Model, ForeignKey, DataType } from 'sequelize-typescript';
+import { Table, Column, Model, ForeignKey, DataType, BelongsTo } from 'sequelize-typescript';
 import { Comment } from './comment.model';
 import { User } from '../../user/model/User.model';
 
@@ -15,4 +15,7 @@ export class CommentMention extends Model<CommentMention> {
   @ForeignKey(() => User)
   @Column({ type: 'UUID', allowNull: false })
   mentioned_user_id: string;
+
+  @BelongsTo(() => User, { foreignKey: 'mentioned_user_id', as: 'mentionedUser' })
+  mentionedUser: User;
 }
