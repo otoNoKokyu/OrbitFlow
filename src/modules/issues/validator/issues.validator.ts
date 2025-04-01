@@ -16,7 +16,7 @@ export const CreateIssueSchema = Joi.object({
   dueDate: Joi.date().iso().allow(null),
   type: Joi.string().valid('task', 'subtask', 'epic', 'story').required(),
   parentId: Joi.string().uuid().allow(null),
-})
+}).unknown(false)
 
 export const fetchAllIssueSchema = CreateIssueSchema.fork(
   Object.keys(CreateIssueSchema.describe().keys),

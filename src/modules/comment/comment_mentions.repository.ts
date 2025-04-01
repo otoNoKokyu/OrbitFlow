@@ -7,7 +7,14 @@ export class CommentMentionRepository extends BaseRepository<CommentMention> {
   constructor() {
     super(CommentMention)
   }
-  async bulkCreate(records: Partial<CommentMention>[], transaction?: Transaction): Promise<CommentMention[]> {
-    return this.model.bulkCreate(records, { transaction });
+  async bulkCreate(
+    records: Partial<CommentMention>[], 
+    transaction?: Transaction, 
+    updateOnDuplicateFields?: (keyof CommentMention)[]
+  ): Promise<CommentMention[]> {
+    return this.model.bulkCreate(records, {
+      transaction,
+      updateOnDuplicate: updateOnDuplicateFields && updateOnDuplicateFields.length ? updateOnDuplicateFields : undefined
+    });
   }
 }

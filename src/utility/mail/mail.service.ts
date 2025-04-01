@@ -63,8 +63,8 @@ export class MailService {
   
       if (
         oldValue !== newValue &&
-        oldValue != null && oldValue !== '' &&
-        newValue != null && newValue !== ''
+        oldValue &&
+        newValue
       ) {
         return options.fn({
           old: oldValue, 

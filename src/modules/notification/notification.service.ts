@@ -18,15 +18,15 @@ export class NotificationService {
         })
         return await this.mailService.sendIssueNotification(recipient,issue,prevIssue)
     }
-    public getIssueDataForNotification(issue: EntityAttributes<Issue>):NotificationIssueType{
+    public getIssueDataForNotification(issue: EntityAttributes<Issue> & {comment?:string}):NotificationIssueType{
         const {
             projectIssueId = '',
             name = '',
             assignee,
             reporter,
+            comment = '',
             status = '',
             updatedAt = '',
-            comments = ''
           } = issue || {};
           
           const aFn = assignee?.first_name || '';
@@ -36,12 +36,13 @@ export class NotificationService {
             title:name,
             assignee:aFn,
             reporter: rFn,
+            comment,
             status,
             updatedOn:updatedAt? new Date(updatedAt).toLocaleDateString(): '',
         }
     }
-    public async recieveIssueNotification(recipient:string,details:Partial<Issue>, prevDetails?:Partial<Issue> ){
-        return await this.sendIssueNotification(recipient, this.getIssueDataForNotification(details),this.getIssueDataForNotification(prevDetails))
-
+    public async recieveIssueNotification(recipients:string[],details:Partial<Issue> & {comment?:string}, prevDetails?:Partial<Issue> ){
+        const allEmailSendings = recipients.map(e=>this.sendIssueNotification(e, this.getIssueDataForNotification(details),this.getIssueDataForNotification(prevDetails)))
+        return await Promise.allSettled(allEmailSendings).catch(err=>console.error(err))
     }
 }

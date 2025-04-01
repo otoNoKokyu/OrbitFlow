@@ -1,114 +1,215 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JIRA Issue Notification</title>
     <style>
         body {
-            font-family: 'Arial', sans-serif;
-            background-color: #f4f5f7;
-            padding: 20px;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f8fafc;
+            color: #1a1f36;
+            line-height: 1.5;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
         }
-        .email-container {
-            max-width: 600px;
-            background: white;
-            padding: 20px;
-            border-radius: 6px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            border: 1px solid #ddd;
+
+        .email-wrapper {
+            max-width: 680px;
+            margin: 0 auto;
+            padding: 24px;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
+
         .header {
-            background: #0052cc;
+            padding: 24px;
+            background-color: #0052cc;
+            border-radius: 12px 12px 0 0;
             color: white;
-            padding: 15px;
-            text-align: left;
-            font-size: 18px;
-            font-weight: bold;
-            border-radius: 6px 6px 0 0;
+            font-size: 24px;
+            font-weight: 600;
         }
+
         .content {
-            padding: 20px;
-            font-size: 14px;
-            color: #333;
+            padding: 32px;
         }
-        .content p {
-            margin: 10px 0;
+
+        .info-row {
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #eaecef;
         }
+
+        .info-label {
+            font-weight: 600;
+            color: #374151;
+            margin-right: 8px;
+            font-size: 18px;
+        }
+
         .updates-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 15px;
+            margin-top: 24px;
+            border-radius: 8px;
+            overflow: hidden;
         }
-        .updates-table th, .updates-table td {
-            border: 1px solid #ddd;
-            padding: 8px;
+
+        .updates-table th,
+        .updates-table td {
+            padding: 16px;
             text-align: left;
+            border-bottom: 1px solid #eaecef;
+            font-size: 16px;
         }
+
         .updates-table th {
-            background-color: #f4f5f7;
+            background-color: #f7fafc;
+            font-weight: 600;
+            color: #1a1f36;
         }
-        .highlight-old { color: red; }
-        .highlight-new { color: green; font-weight: bold; }
+
+        .highlight-old { color: #dc2626; }
+        .highlight-new { color: #16a34a; font-weight: 500; }
+
         .button-container {
+            margin-top: 32px;
             text-align: center;
-            margin-top: 20px;
         }
-        .button {
+
+        .cta-button {
             display: inline-block;
-            padding: 10px 18px;
-            background: #0052cc;
+            padding: 12px 24px;
+            background-color: #0052cc;
             color: white;
             text-decoration: none;
-            border-radius: 4px;
-            font-weight: bold;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 18px;
+            transition: transform 0.2s ease;
         }
-        .button:hover {
-            background: #003b99;
+
+        .cta-button:hover {
+            transform: translateY(-1px);
         }
+
         .footer {
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid #eaecef;
+            font-size: 16px;
+            color: #6b7280;
             text-align: center;
-            font-size: 12px;
-            color: gray;
-            margin-top: 20px;
-            padding-top: 10px;
-            border-top: 1px solid #ddd;
+        }
+
+        @media screen and (max-width: 680px) {
+            .email-wrapper {
+                margin: 16px;
+                padding: 16px;
+            }
+            
+            .header {
+                padding: 16px;
+            }
+            
+            .content {
+                padding: 24px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="email-container">
+    <div class="email-wrapper">
         {{#if projectIssueId}}
-            <div class="header">🔔 Issue Updated: {{projectIssueId}}</div>
+        <div class="header">🔔 Issue Updated: {{projectIssueId}}</div>
         {{/if}}
+        
         <div class="content">
-            <p><strong>📌 Issue:</strong> {{title}}</p>
-            <p><strong>👤 Assignee:</strong> {{assignee}}</p>
-            <p><strong>📢 Reporter:</strong> {{reporter}}</p>
-            <p><strong>📅 Updated On:</strong> {{updatedOn}}</p>
-
-            {{#if changes}}
-                <h3>🔄 Changes:</h3>
-                <table class="updates-table">
-                    <tr>
-                        <th>Field</th>
-                        <th>Previous Value</th>
-                        <th>New Value</th>
-                    </tr>
-                    {{#each changes}}
-                        <tr>
-                            <td><strong>{{field}}</strong></td>
-                            <td class="highlight-old">{{oldValue}}</td>
-                            <td class="highlight-new">{{newValue}}</td>
-                        </tr>
-                    {{/each}}
-                </table>
+            <!-- Issue Information -->
+            {{#if title}}
+            <div class="info-row">
+                <span class="info-label">📌 Issue:</span> 
+                {{#ifChanged 'title'}}
+                    <span class="highlight-old">{{old}}</span> → 
+                    <span class="highlight-new">{{new}}</span>
+                {{else}}
+                    {{title}}
+                {{/ifChanged}}
+            </div>
             {{/if}}
 
+            {{#if assignee}}
+            <div class="info-row">
+                <span class="info-label">👤 Assignee:</span> 
+                {{#ifChanged 'assignee'}}
+                    <span class="highlight-old">{{old}}</span> → 
+                    <span class="highlight-new">{{new}}</span>
+                {{else}}
+                    {{assignee}}
+                {{/ifChanged}}
+            </div>
+            {{/if}}
+
+            {{#if reporter}}
+            <div class="info-row">
+                <span class="info-label">📢 Reporter:</span> 
+                {{#ifChanged 'reporter'}}
+                    <span class="highlight-old">{{old}}</span> → 
+                    <span class="highlight-new">{{new}}</span>
+                {{else}}
+                    {{reporter}}
+                {{/ifChanged}}
+            </div>
+            {{/if}}
+
+            {{#if updatedOn}}
+            <div class="info-row">
+                <span class="info-label">📅 Updated On:</span> 
+                {{#ifChanged 'updatedOn'}}
+                    <span class="highlight-old">{{old}}</span> → 
+                    <span class="highlight-new">{{new}}</span>
+                {{else}}
+                    {{updatedOn}}
+                {{/ifChanged}}
+            </div>
+            {{/if}}
+
+            <!-- Changes Section -->
+            {{#if changes}}
+            <h3 style="margin-top: 24px; margin-bottom: 16px; color: #1a1f36;">🔄 Changes:</h3>
+            <table class="updates-table">
+                <tr>
+                    <th>Field</th>
+                    <th>Previous Value</th>
+                    <th>New Value</th>
+                </tr>
+                {{#each changes}}
+                <tr>
+                    <td><strong>{{field}}</strong></td>
+                    <td class="highlight-old">{{oldValue}}</td>
+                    <td class="highlight-new">{{newValue}}</td>
+                </tr>
+                {{/each}}
+            </table>
+            {{/if}}
+
+            <!-- Comment Section -->
+            {{#if comment}}
+            <h3 style="margin-top: 24px; margin-bottom: 16px; color: #1a1f36;">💬 Comment:</h3>
+            <p>{{comment}}</p>
+            {{/if}}
+
+            <!-- Action Button -->
             <div class="button-container">
-                <a href="www.jira.com/{{projectIssueId}}" class="button">🔍 View Issue</a>
+                <a href="www.jira.com/{{projectIssueId}}" class="cta-button">🔍 View Issue</a>
             </div>
         </div>
+
+        <!-- Footer -->
         <div class="footer">
             This is an automated email from Orbitflow. Please do not reply.
         </div>

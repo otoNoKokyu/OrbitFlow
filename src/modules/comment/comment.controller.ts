@@ -20,10 +20,10 @@ export class CommentController extends BaseController<Comment> {
 
     ) {
     const {user} = req
-      return await this.commentService.create({ 
+      return await this.commentService.createOrUpdateComment({ 
         ...body, 
-        author_id: user?.userId 
-      });
+        author_id: user?.userId,
+      },undefined,'create');
     }
     @Get('/')
     @UsePipes(new JoiValidationPipe(fetchCommentSchema))
@@ -39,8 +39,6 @@ export class CommentController extends BaseController<Comment> {
       @Param() id:string,
       @Body() body:AtLeastOneAttribute<Comment>
     ){
-      return await super.update(id,body)
+      return await this.commentService.createOrUpdateComment(body,{id},'update')
     }
-
-
 }

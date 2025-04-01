@@ -13,10 +13,12 @@ import { RedisPolicy } from 'src/utility/redis/redis.type';
 import { ServiceException } from 'src/helper/CustomError';
 import { ERR_TYPE } from 'src/interface/CustomError';
 import Redis from 'ioredis';
+import { UserModule } from '../user/user.module';
+import { UserRepository } from '../user/user.repository';
 
 @Module({
-  imports:[NotificationModule,ProjectModule],
-  providers: [IssuesService,IssueStatusRepository,IssueRepository,NotificationService,MailService,ProjectRepository,
+  imports:[NotificationModule,ProjectModule,UserModule],
+  providers: [IssuesService,IssueStatusRepository,IssueRepository,NotificationService,MailService,ProjectRepository,UserRepository,
     {
       provide: 'ISSUE_POLICY',  
       useValue: RedisPolicy.ISSUE,  
