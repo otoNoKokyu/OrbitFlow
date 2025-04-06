@@ -11,7 +11,3 @@ export type NotificationIssueType = {
     updatedOn?: string;
     comment?: string
 }
-export enum NotificationType  {
-    ISSUE_CHANGE = 'Issue changes',
-    ISSUE_CREATE = 'Issue create'
-}

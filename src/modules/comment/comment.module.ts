@@ -3,15 +3,15 @@ import { CommentService } from './comment.service';
 import { CommentController } from './comment.controller';
 import { CommentRepository } from './comment.repository';
 import { CommentMentionRepository } from './comment_mentions.repository';
-import { NotificationModule } from '../notification/notification.module';
 import { UserModule } from '../user/user.module';
-import { NotificationService } from '../notification/notification.service';
 import { UserRepository } from '../user/user.repository';
 import { MailService } from 'src/utility/mail/mail.service';
+import { EventBusModule } from '../shared/event-bus.module';
+import { IssueRepository } from '../issues/issue.repository';
 
 @Module({
-  imports:[NotificationModule,UserModule],
-  providers: [CommentService,CommentRepository,CommentMentionRepository,NotificationService,UserRepository,MailService],
+  imports:[UserModule,EventBusModule],
+  providers: [CommentService,CommentRepository,CommentMentionRepository,UserRepository,MailService,IssueRepository],
   controllers: [CommentController]
 })
 export class CommentModule {}

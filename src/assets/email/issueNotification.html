@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -73,8 +74,17 @@
             color: #1a1f36;
         }
 
-        .highlight-old { color: #dc2626; }
-        .highlight-new { color: #16a34a; font-weight: 500; }
+        .highlight-old {
+            color: #dc2626;
+            font-size: large;
+        }
+
+        .highlight-new {
+            color: #16a34a;
+            font-weight: bold;
+            font-size: large;
+
+        }
 
         .button-container {
             margin-top: 32px;
@@ -84,17 +94,18 @@
         .cta-button {
             display: inline-block;
             padding: 12px 24px;
-            background-color: #0052cc;
-            color: white;
-            text-decoration: none;
+            background-color: #1b26c7;
+            color: white !important;
+            text-decoration: none !important;
             border-radius: 6px;
             font-weight: 600;
             font-size: 18px;
-            transition: transform 0.2s ease;
+            transition: transform 0.2s ease, background-color 0.2s ease;
         }
 
         .cta-button:hover {
             transform: translateY(-1px);
+            background-color: #3978a1;
         }
 
         .footer {
@@ -111,69 +122,82 @@
                 margin: 16px;
                 padding: 16px;
             }
-            
+
             .header {
                 padding: 16px;
             }
-            
+
             .content {
                 padding: 24px;
             }
         }
     </style>
 </head>
+
 <body>
     <div class="email-wrapper">
         {{#if projectIssueId}}
         <div class="header">🔔 Issue Updated: {{projectIssueId}}</div>
         {{/if}}
-        
+
         <div class="content">
             <!-- Issue Information -->
             {{#if title}}
             <div class="info-row">
-                <span class="info-label">📌 Issue:</span> 
+                <span class="info-label">📌 Issue:</span>
                 {{#ifChanged 'title'}}
-                    <span class="highlight-old">{{old}}</span> → 
-                    <span class="highlight-new">{{new}}</span>
+                <span class="highlight-old">{{old}}</span> →
+                <span class="highlight-new">{{new}}</span>
                 {{else}}
-                    {{title}}
+                {{title}}
                 {{/ifChanged}}
             </div>
             {{/if}}
 
             {{#if assignee}}
             <div class="info-row">
-                <span class="info-label">👤 Assignee:</span> 
+                <span class="info-label">👤 Assignee:</span>
                 {{#ifChanged 'assignee'}}
-                    <span class="highlight-old">{{old}}</span> → 
-                    <span class="highlight-new">{{new}}</span>
+                <span class="highlight-old">{{old}}</span> →
+                <span class="highlight-new">{{new}}</span>
                 {{else}}
-                    {{assignee}}
+                {{assignee}}
                 {{/ifChanged}}
             </div>
             {{/if}}
 
             {{#if reporter}}
             <div class="info-row">
-                <span class="info-label">📢 Reporter:</span> 
+                <span class="info-label">📢 Reporter:</span>
                 {{#ifChanged 'reporter'}}
-                    <span class="highlight-old">{{old}}</span> → 
-                    <span class="highlight-new">{{new}}</span>
+                <span class="highlight-old">{{old}}</span> →
+                <span class="highlight-new">{{new}}</span>
                 {{else}}
-                    {{reporter}}
+                {{reporter}}
+                {{/ifChanged}}
+            </div>
+            {{/if}}
+
+            {{#if status}}
+            <div class="info-row">
+                <span class="info-label">📂 Status:</span>
+                {{#ifChanged 'status'}}
+                <span class="highlight-old">{{old}}</span> →
+                <span class="highlight-new">{{new}}</span>
+                {{else}}
+                {{status}}
                 {{/ifChanged}}
             </div>
             {{/if}}
 
             {{#if updatedOn}}
             <div class="info-row">
-                <span class="info-label">📅 Updated On:</span> 
+                <span class="info-label">📅 Updated On:</span>
                 {{#ifChanged 'updatedOn'}}
-                    <span class="highlight-old">{{old}}</span> → 
-                    <span class="highlight-new">{{new}}</span>
+                <span class="highlight-old">{{old}}</span> →
+                <span class="highlight-new">{{new}}</span>
                 {{else}}
-                    {{updatedOn}}
+                {{updatedOn}}
                 {{/ifChanged}}
             </div>
             {{/if}}
@@ -215,4 +239,5 @@
         </div>
     </div>
 </body>
+
 </html>

@@ -5,11 +5,7 @@ import {
   DataType,
   ForeignKey,
   BelongsTo,
-  HasMany,
-  BeforeSave,
-  BeforeUpdate,
-  BeforeValidate,
-  BeforeCreate,
+  HasMany
 } from 'sequelize-typescript';
 import { Projects } from 'src/modules/project/entities/project.model';
 import { User } from 'src/modules/user/model/User.model';

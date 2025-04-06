@@ -33,12 +33,13 @@ export class CommentController extends BaseController<Comment> {
         return await this.commentService.findAll(query);
     }
 
-    @Put('/:id')
-    @UsePipes(new JoiValidationPipe(updateCommentSchema))
-    public async update(
-      @Param() id:string,
+    @Put('/:issueId/:id')
+    // @UsePipes(new JoiValidationPipe(updateCommentSchema))
+    public async updateComment(
+      @Param('id') id:string,
+      @Param('issueId') issue_id:string,
       @Body() body:AtLeastOneAttribute<Comment>
     ){
-      return await this.commentService.createOrUpdateComment(body,{id},'update')
+      return await this.commentService.createOrUpdateComment(body,{id,issue_id},'update')
     }
 }

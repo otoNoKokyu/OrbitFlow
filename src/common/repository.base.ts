@@ -55,17 +55,21 @@ export class BaseRepository<T extends Model> implements IBaseRepository<T> {
   }
 
   async update(
-    filter: AtLeastOneAttribute<T>, 
-    body: AtLeastOneAttribute<T>, 
+    filter: AtLeastOneAttribute<T>,
+    body: AtLeastOneAttribute<T>,
     transaction?: Transaction
-  ): Promise<[affectedCount: number]> {
-    return await this.model.sequelize!.transaction(async (t) => {
-      const activeTransaction = transaction || t;
+  ): Promise<[number]> {
+    const result = await this.model.sequelize!.transaction(async (t) => {
+      const activeTransaction = transaction ?? t;
+  
       return await this.model.update(body, {
-        where: filter as unknown as WhereOptions<T>,
+        where: filter as WhereOptions<T>,
         transaction: activeTransaction,
+        logging:true
       });
     });
+  
+    return result;
   }
   
 

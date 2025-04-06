@@ -6,19 +6,18 @@ import { IssueRepository } from './issue.repository';
 import { NotificationModule } from '../notification/notification.module';
 import { NotificationService } from '../notification/notification.service';
 import { MailService } from 'src/utility/mail/mail.service';
-import { ProjectModule } from '../project/project.module';
 import { ProjectRepository } from '../project/project.repository';
 import { RedisService } from 'src/utility/redis/redis.service';
 import { RedisPolicy } from 'src/utility/redis/redis.type';
 import { ServiceException } from 'src/helper/CustomError';
 import { ERR_TYPE } from 'src/interface/CustomError';
 import Redis from 'ioredis';
-import { UserModule } from '../user/user.module';
 import { UserRepository } from '../user/user.repository';
+import { EventBusModule } from '../shared/event-bus.module';
 
 @Module({
-  imports:[NotificationModule,ProjectModule,UserModule],
-  providers: [IssuesService,IssueStatusRepository,IssueRepository,NotificationService,MailService,ProjectRepository,UserRepository,
+  imports:[EventBusModule],
+  providers: [IssuesService,IssueStatusRepository,IssueRepository,MailService,ProjectRepository,UserRepository,
     {
       provide: 'ISSUE_POLICY',  
       useValue: RedisPolicy.ISSUE,  
@@ -34,6 +33,7 @@ import { UserRepository } from '../user/user.repository';
       scope: Scope.REQUEST, 
     },
   ],
+  exports:[IssueRepository],
   controllers: [IssuesController]
 })
 export class IssuesModule {}

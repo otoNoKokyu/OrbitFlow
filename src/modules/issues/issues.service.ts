@@ -11,6 +11,8 @@ import { RedisService } from 'src/utility/redis/redis.service';
 import _ from 'lodash'
 import { isEmptyObject } from 'src/utility/NullishUtills';
 import { UserRepository } from '../user/user.repository';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NotificationType } from '../shared/shared.types';
 
 
 @Injectable()
@@ -19,9 +21,9 @@ export class IssuesService extends BaseService<Issue> {
     private IssueRepository: IssueRepository,
     private projectRepository: ProjectRepository,
     @Inject('serviceException') private serviceException: ServiceException<ERR_TYPE>,
-    private readonly notificationService: NotificationService,
     private readonly redisService: RedisService,
-    private readonly userRepo: UserRepository
+    private readonly userRepo: UserRepository,
+    private readonly eventEmmiter: EventEmitter2,
 
   ) {
     super(IssueRepository)
@@ -44,22 +46,14 @@ export class IssuesService extends BaseService<Issue> {
     const count = await Issue.count({ where: { projectId: issue.projectId } });
     return `${prefix}-${count + 1}`;
   }
-
-  private async findIssueForNotification(id: string) {
-    return await this.IssueRepository.findOne(
-      { id },
-      ['assignee', 'reporter'],
-      ['projectIssueId', 'name', 'status', 'updatedAt'])
-  }
-
   async create(data: ModelCreationAttributes<Issue>) {
     const existingIssue = await this.IssueRepository.findOne({ name: data.name, projectId: data.projectId, type: data.type })
     if (existingIssue) throw this.serviceException.throw('RESOURCE_CONFLICT', 'Issue already exists')
     const projectIssueId = await this.getIssueProjectId(data)
     const issue = await this.IssueRepository.create({ ...data, projectIssueId })
-    const popultaedIssue = await this.findIssueForNotification(issue.id)
-    if (popultaedIssue) this.redisService.setTempData(issue.id, popultaedIssue, 7200)
-    await this.notificationService.recieveIssueNotification([popultaedIssue.assignee.email], popultaedIssue)
+    const popultaedIssue = await this.IssueRepository.findIssueForNotification(issue.id)
+    if (!isEmptyObject(popultaedIssue)) this.redisService.setTempData(issue.id, popultaedIssue, 7200)
+    this.eventEmmiter.emitAsync(NotificationType.ISSUE_CREATE,issue)
     return issue;
   }
   async findAll(query: EntityAttributes<Issue>, page = 1, limit = 10) {
@@ -70,7 +64,7 @@ export class IssuesService extends BaseService<Issue> {
     body: AtLeastOneAttribute<Issue>,
   ) {
     let storedData = await this.redisService.getTempData(filter.id)
-    if (!storedData) storedData = await this.findIssueForNotification(filter.id)
+    if (!storedData) storedData = await this.IssueRepository.findIssueForNotification(filter.id)
 
     if (body.loggedTime || body.estimate) {
       const issue = await this.IssueRepository.findOne({ id: filter.id }, null, ['loggedTime', 'estimate'])
@@ -79,37 +73,12 @@ export class IssuesService extends BaseService<Issue> {
     }
     const [affectedCount] = await this.IssueRepository.update(filter, body);
     if (affectedCount > 0) {
-      const recipients = await this.resolveNotificationRecipient(storedData)
-      const notificationBody = await this.resolveNotificationBody(body)
-      if (recipients.length) await this.notificationService.recieveIssueNotification(recipients, notificationBody, storedData)
+      this.eventEmmiter.emitAsync(NotificationType.ISSUE_ATTRIBUTES_CHANGE,body,storedData)
       await this.redisService.dropTempData(filter.id)
       return 'update successful'
     }
     else return 'update unsuccessful'
   }
-  private async resolveNotificationRecipient(body: EntityAttributes<Issue>) {
-    const recipientEmails: string[] = []
-    const { assignee, reporter, comments } = body
-    if (!isEmptyObject(assignee)) recipientEmails.push(assignee.email)
-    if (!isEmptyObject(reporter)) recipientEmails.push(reporter.email)
-    if (comments?.length) {
-      comments.forEach((e) => {
-        e.mentions.forEach(f => {
-          recipientEmails.push(f.mentionedUser.email)
-        })
-      })
-    }
-    return recipientEmails
 
-  }
-  private async resolveNotificationBody(body: AtLeastOneAttribute<Issue>) {
-    const { assigneeId, reporterId } = body
-    if(!assigneeId && !reporterId ) return body
-    const promiseArr = []
-    if(assigneeId) promiseArr.push(this.userRepo.findOne({user_id:assigneeId}))
-    if(reporterId) promiseArr.push(this.userRepo.findOne({user_id:reporterId}))
-    const [assignee, reporter] = await Promise.all(promiseArr)
-    return {...body,assignee,reporter};
 
-  }
 }

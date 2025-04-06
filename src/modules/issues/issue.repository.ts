@@ -11,7 +11,7 @@ export class IssueRepository extends BaseRepository<Issue> {
   constructor() {
     super(Issue)
   }
-  async findAndCountAll(filter: Partial<Issue>, page , limit ) {
+  async findAndCountAll(filter: Partial<Issue>, page:number , limit:number ) {
     const offset = (page - 1) * limit;
     const { rows, count } = await this.model.findAndCountAll({
       where: { ...filter },
@@ -66,4 +66,10 @@ export class IssueRepository extends BaseRepository<Issue> {
     const issue =  await this.model.findOne(queryFilter)
     return issue?.toJSON();
   }
+  async findIssueForNotification(id: string) {
+    return await this.findOne(
+        { id },
+        ['assignee', 'reporter'],
+        ['projectIssueId', 'name', 'status', 'updatedAt'])
+}
 }
