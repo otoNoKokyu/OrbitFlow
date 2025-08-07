@@ -10,12 +10,6 @@ type AtLeastOne<T> = {
 }[keyof T];
 export type AtLeastOneAttribute<T extends Model<any,any>> = AtLeastOne<InferAttributes<T>>;
 
-// interface IBase<T extends Model<any, any>> {
-//   create(body: ModelCreationAttributes<T>): Promise<ModelAttributes<T>>;
-//   findAll(query?: Partial<T>): Promise<ModelAttributes<T>[]>;
-//   findById(id: string): Promise<ModelAttributes<T>>;
-//   update(id: string, body: Partial<T>): Promise<string>;
-//   delete(id: string): Promise<string>;
 // }
 export interface IBase<T extends Model<any, any>>  {
   create(body: ModelCreationAttributes<T>): Promise<ModelAttributes<T>>;

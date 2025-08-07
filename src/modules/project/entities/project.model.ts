@@ -1,4 +1,5 @@
-import { Table, Column, Model, DataType, ForeignKey } from 'sequelize-typescript';
+import { Table, Column, Model, DataType, ForeignKey, HasMany } from 'sequelize-typescript';
+import { IssueStatus } from 'src/modules/issues/model/issue_status.model';
 import { User } from 'src/modules/user/model/User.model';
 
 @Table({ tableName: 'projects' })
@@ -26,15 +27,6 @@ export class Projects extends Model<Projects> {
     allowNull: true,
   })
   end_date: Date;
-
-  // Uncomment if you want to use Sprints
-  // @ForeignKey(() => Sprints)
-  // @Column({
-  //   type: DataType.CHAR(36),
-  //   allowNull: true,
-  // })
-  // current_sprint_id: string;
-
   @Column({
     type: DataType.INTEGER,
     defaultValue: 0,
@@ -72,4 +64,7 @@ export class Projects extends Model<Projects> {
     allowNull: true,
   })
   updated_at: Date;
+  
+  @HasMany(() => IssueStatus)
+  issueStatuses: IssueStatus[];
 }

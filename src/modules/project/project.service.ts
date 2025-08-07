@@ -8,11 +8,13 @@ import { isNotEmptyObject } from 'class-validator';
 import { isEmptyObject } from 'src/utility/NullishUtills';
 import { ServiceException } from 'src/helper/CustomError';
 import { ERR_TYPE } from 'src/interface/CustomError';
+import { TransactionManagerService } from 'src/helper/transaction.manager';
 @Injectable()
 export class ProjectService extends BaseService<Projects> {
   constructor(
     private projectRepository:ProjectRepository,
     private userProjectService: UserProjectService,
+    private transactionManager: TransactionManagerService,
     @Inject('ServiceException') private serviceException: ServiceException<ERR_TYPE>,
   
   ) {

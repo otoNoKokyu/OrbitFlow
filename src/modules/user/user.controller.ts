@@ -1,26 +1,28 @@
-import { Body, Controller, Get, HttpCode, Put, Req } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Put, Req, UsePipes } from '@nestjs/common';
 import { UserService } from './user.service';
-import { EditUserDto } from './dto/edit.user.profile.dto';
+import { TAppUser } from 'src/utility/utility.type';
+import { EditTEntityUser } from './types/user.types';
+import { JoiValidationPipe } from 'src/common/pipes/schema.validation.pipe';
+import { EditProfileSchema } from './validator/user.validator';
 
 @Controller('user')
 export class UserController {
     constructor(private _userService:UserService){}
 
-    @Get('')
-    private hello(){
-        return 'how are you'
-    }
-
     @Get('/me')
-    private me (
-        @Req() { user }: { user: any },
+    async  me (
+        @Req() { user }: { user: TAppUser }
     )
     {
-        return this._userService.getUserMeData(user.userId)
+        return await this._userService.getUserMeData(user.userId)
     }
     @Put('/editProfile')
+    @UsePipes(new JoiValidationPipe(EditProfileSchema))
     @HttpCode(200)
-    public async editUserProfile(@Body() user: EditUserDto) {
-       return await this._userService.editUserProfile(user);
+    public async editUserProfile(
+        @Body() body: EditTEntityUser,
+        @Req() user: TAppUser
+    ) {
+       return await this._userService.update({user_id:user.userId},body);
     }
 }

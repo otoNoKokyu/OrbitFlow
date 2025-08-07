@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, Query } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, Query, Req } from '@nestjs/common';
 import { IBaseController, ModelAttributes, ModelCreationAttributes, AtLeastOneAttribute, EntityAttributes } from './interface/IBase';
 import { Model } from 'sequelize-typescript';
 import { BaseService } from './service.base';
@@ -11,7 +11,10 @@ export class BaseController<T extends Model<any, any>> implements IBaseControlle
     return this.service.create(data);
   }
   @Get('/')
-  async findAll(@Query() query?: EntityAttributes<T>): Promise<ModelAttributes<T>[]> {
+  async findAll(
+    @Query() query?: EntityAttributes<T>,
+    @Req() req?: any, 
+): Promise<ModelAttributes<T>[]> {
     return this.service.findAll(query);
   }
   @Get(':id')

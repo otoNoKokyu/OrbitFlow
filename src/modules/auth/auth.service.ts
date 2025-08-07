@@ -11,10 +11,9 @@ import { User } from '../user/model/User.model';
 import { ModelCreationAttributes } from 'src/common/interface/IBase';
 import { UserProjectService } from '../project/userProject.service';
 import { UserSecurityService } from 'src/utility/user-security/user-security.service';
-import { ForgetPasswordDto } from './dto/forget.password.dto';
-
 import { RoleService } from '../role/role.service';
 import { RoleEnum } from '../role/utility/roles.enum';
+import { TForgetPassword } from './types/auth.types';
 @Injectable()
 export class AuthService {
     constructor(
@@ -79,7 +78,6 @@ export class AuthService {
 
 
     }
-
     async token(token: string) {
         const decoded: any = this.jwtService.verify(token, JwtEncodables.REFRESH_TOKEN)
         const doesExist = await this.userService.findOne({ user_id: decoded.userId })
@@ -93,7 +91,6 @@ export class AuthService {
         await this.userService.update({ access_token, refresh_token }, { user_id: doesExist.user_id })
         return { username: doesExist.username, access_token, refresh_token }
     }
-
     async forgotPassword(email: string): Promise<void> {
         const user = await this.userService.findOne({ email: email });
         if (!user) this.serviceException.throw('NOT_FOUND', 'user not found for this email')
@@ -103,7 +100,7 @@ export class AuthService {
             resetLink: `localhost:${process.env.PORT}/auth/reset-password`
         });
     }
-    async resetPassword(model: ForgetPasswordDto): Promise<void> {
+    async resetPassword(model: TForgetPassword): Promise<void> {
         const { email, newPassword } = model;
         const user = this.userService.findOne({ email });
         if (!user) this.serviceException.throw('NOT_FOUND', 'user not found!');

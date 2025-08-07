@@ -3,23 +3,18 @@ import { User } from './model/User.model';
 import { UserRepository } from './user.repository';
 import { ProjectService } from '../project/project.service';
 import { MailService } from 'src/utility/mail/mail.service';
-import { JwtEncodables } from 'src/utility/utility.type';
+import { JwtEncodables, TAppUser } from 'src/utility/utility.type';
 import { JwtService } from 'src/utility/jwt/jwt.service';
 import { ServiceException } from 'src/helper/CustomError';
 import { ERR_TYPE } from 'src/interface/CustomError';
 import { UserProjectService } from '../project/userProject.service';
 import { BaseService } from 'src/common/service.base';
-import { ModelCreationAttributes } from 'src/common/interface/IBase';
-import { CredentialInfo, EditUserDto, PersonalInfo } from './dto/edit.user.profile.dto';
-import { isEmail } from 'class-validator';
-import { UserSecurityService } from 'src/utility/user-security/user-security.service';
+import {  EntityAttributes, ModelCreationAttributes } from 'src/common/interface/IBase';
+import { EditTEntityUser } from './types/user.types';
+import { TInvite } from '../auth/types/auth.types';
+import _ from 'lodash'
 
-export const usersProviders = [
-    {
-        provide: 'USER_REPOSITORY',
-        useValue: User,
-    },
-];
+type UserUpdateFilterType = Pick<EntityAttributes<User>,'user_id'|'phone_number'|'email'>
 @Injectable()
 export class UserService extends BaseService<User> {
     constructor(
@@ -29,35 +24,19 @@ export class UserService extends BaseService<User> {
         private userProjectService: UserProjectService,
         private mailService: MailService,
         private jwtService: JwtService,
-        private userSecurityService : UserSecurityService,
     ) {
         super(userRepository)
     }
     async create(user: ModelCreationAttributes<User>) {
-        // if (!roleId) {
-        //     const guestRole = await this.roleService.findRole(RoleEnum.ADMIN);
-        //     if (!guestRole) this.serviceException.throw('RESOURCE_CONFLICT','Guest role not found');
-        //     roleId = guestRole.role_id;
-        // } else {
-        //     const roleExists = await this.roleService.findRole(roleId);
-        //     if (!roleExists) this.serviceException.throw('RESOURCE_CONFLICT','No role found');
-        // }
         const dob = user.date_of_birth ? new Date(user.date_of_birth) : null;
         delete user.date_of_birth;
         return await this.userRepository.create({ ...user, date_of_birth: dob });
-
-        // if (meta) await this.userProjectService.create({
-        //     userId: userData.user_id,
-        //     roleId: userData.roleId,
-        //     isActive: true,
-        //     projectId: meta.projectId
-        // });
     }
     async me(userId: string) {
         return await this.userRepository.findOne({ user_id: userId })
     }
     async invite(
-        { roleId, pId, email, username, userId }: { roleId: string; pId: string, email: string, username: string, userId: string },
+        { roleId, pId, email, username, userId }: Omit<TAppUser,'role'> & TInvite,
     ): Promise<string> {
         const project = await this.projectService.findOne({ id: pId });
         if (!project) this.serviceException.throw('RESOURCE_CONFLICT', 'no project found');
@@ -119,24 +98,8 @@ export class UserService extends BaseService<User> {
         }, [])[0]
 
     }
-
-    async validateEmailUpdate(payload: { info: Partial<CredentialInfo>, model: EditUserDto }) {
-        if (!isEmail(payload.info.email)) return this.serviceException.throw('REQ_MALFORMED', 'invalid email!');
-        const userWithSameEmail = await this.findOne({ email: payload.model.email });
-        if (userWithSameEmail) this.serviceException.throw('RESOURCE_CONFLICT', 'user with same email already exists!');
-        await this.userSecurityService.sendOtp({resend: false, email: payload.info.email })
-    }
-
-    async updateUserEmail(payload: EditUserDto) {
-        const user = await this.findOne({user_id: payload.user_id});
-        if (!user) this.serviceException.throw('NOT_FOUND', 'user not found!');
-        this.validateEmailUpdate({ info: { email: user.email }, model: payload });
-        await this.userRepository.update({ email: payload.email }, { user_id: user.id });
-    }
-
-    async editUserProfile(payload: EditUserDto): Promise<void> {
-        this.updateUserEmail(payload);
-        const updatedPersonalInfo: PersonalInfo = { ...payload, date_of_birth: new Date(payload.date_of_birth) };
-        await this.userRepository.update(updatedPersonalInfo, { user_id: payload.user_id });
+    async update(filter:EditTEntityUser, payload: EditTEntityUser){
+        await this.userRepository.update(filter, payload);
+        return 'update successful'
     }
 }

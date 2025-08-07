@@ -18,6 +18,7 @@ import { UserProject } from './modules/project/entities/userprojects.model';
 import { HelperModule } from './helper/helper.module';
 import { MiddlewareModule } from './middlewares/middleware.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { Issue } from './modules/issues/model/issue.model';
 
 @Module({
   imports: [
@@ -41,7 +42,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
         username: configServce.get("DB_USERNAME"),
         password: configServce.get("DB_PASSWORD"),
         database: configServce.get("DB_DATABASE"),
-        models: [User,Roles,Projects,UserProject],
+        models: [User,Roles,Projects,UserProject, Issue],
         synchronize: true,
         pool:{
           max: 5,
