@@ -18,7 +18,7 @@ import { UserSecurityModule } from 'src/utility/user-security/user-security.modu
     UserSecurityModule,
   ],
   providers: [UserRepository,UserService,MailService, JwtService],
-  exports: [UserService],
+  exports: [UserService,UserRepository],
   controllers: [UserController]
 })
 export class UserModule {}

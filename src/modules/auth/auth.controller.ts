@@ -1,4 +1,4 @@
-import { Controller,HttpCode, Req, UsePipes } from '@nestjs/common';
+import { Controller, Get, HttpCode, Query, Req, Res, UsePipes } from '@nestjs/common';
 import { Body, Post, } from '@nestjs/common';
 import { EligbleInviteRole } from 'src/modules/role/utility/roles.enum';
 import { Role } from 'src/decorators/role.decorator';
@@ -12,6 +12,7 @@ import { Throttle } from '@nestjs/throttler';
 import { ForgetPasswordSchema, SignInSchema, userSchema } from './validator/auth.validator';
 import { TForgetPassword, TInvite, TSendOtp, TSignIn } from './types/auth.types';
 import { TAppUser } from 'src/utility/utility.type';
+import { Response } from 'express';
 
 @Controller('auth')
 export class AuthController {
@@ -33,7 +34,7 @@ export class AuthController {
     @UsePipes(new JoiValidationPipe(userSchema))
     @HttpCode(201)
     private async signUp(
-        @Body() data: ModelCreationAttributes<User> & {projectId:string}
+        @Body() data: ModelCreationAttributes<User> & { projectId: string }
     ) {
         const user = await this.authService.signUp(data)
         return user
@@ -56,10 +57,11 @@ export class AuthController {
     @HttpCode(200)
     @Role(EligbleInviteRole.Inviter)
     private async invite(
-        @Req() { user, body }: { user: TAppUser; body: TInvite },
+        @Req() { user, body, query }: { user: TAppUser; body: TInvite, query: { pId: string, roleId: string } },
     ) {
-        const {roleId,email,pId} = body
-        const {username,userId} = user
+        const { email } = body
+        const { pId, roleId } = query
+        const { username, userId } = user
         return await this.usersService.invite({ roleId, pId, email, username, userId })
     }
     @Post('/verify')
@@ -78,15 +80,31 @@ export class AuthController {
     ) {
         return await this.authService.forgotPassword(email)
     }
+    @Get('/forgotPassword')
+    async handleForgotPassword(@Query('hash') hash: string, @Res() res: Response) {
+
+        const shouldRenderForgotPasswordPage = await this.authService.verifyForgotPasswordLink(hash)
+        return res.render('forgotPassword',  { message: 'Reset link sent to your email!', token: hash, expired:!shouldRenderForgotPasswordPage});
+    }    
 
     @Post('/reset-password')
     @HttpCode(200)
     @Throttle({ default: { limit: 3, ttl: 60000 } })
     @UsePipes(new JoiValidationPipe(ForgetPasswordSchema))
     private async resetPassword(
-        @Body() body: TForgetPassword
+        @Body() body: TForgetPassword,
+        @Res() res: Response
     ) {
-        return await this.authService.resetPassword(body)
+         await this.authService.resetPassword(body)
+         return res.redirect('http://localhost:5173/login')
+
+    }
+    @Get('/getInvitedEmail')
+    @HttpCode(200)
+    private async getInvitedEmail(
+        @Query() { token }: { token: string }
+    ) {
+        return await this.authService.getInvitedUserEmail(token)
     }
 
 }

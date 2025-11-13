@@ -8,6 +8,7 @@ import { isEmptyObject } from 'src/utility/NullishUtills';
 import { ServiceException } from 'src/helper/CustomError';
 import { ERR_TYPE } from 'src/interface/CustomError';
 import { IssueStatusRepository } from '../issues/issueStatus.repository';
+import { IssueStatus } from '../issues/model/issue_status.model';
 @Injectable()
 export class ProjectService extends BaseService<Projects> {
   constructor(
@@ -47,4 +48,11 @@ export class ProjectService extends BaseService<Projects> {
         throw this.serviceException.throw('RESOURCE_CONFLICT', 'could not create project');
       }
   }
+
+  async createProjectStatus(body:ModelCreationAttributes<IssueStatus>){
+    return await this.issueStatusRepository.create(body);
+  }
+  // async fetchProjectStatus(){
+  //   return await this.issueStatusRepository.fetchProjectStatus();
+  // }
 }

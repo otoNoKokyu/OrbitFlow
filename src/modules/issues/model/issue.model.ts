@@ -89,5 +89,6 @@ export class Issue extends Model<Issue> {
 
   @HasMany(() => Comment, 'issue_id')
   comments: Comment[];
+  
 
 }

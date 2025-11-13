@@ -41,4 +41,5 @@ export class Comment extends Model<Comment> {
   
   @HasMany(() => CommentMention)
   mentions: CommentMention[];
+  
 }

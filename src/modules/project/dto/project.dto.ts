@@ -19,4 +19,10 @@ export const creatProjectSchema = Joi.object({
   abortEarly:true
 }).unknown(false)
 
+export const issueStatusSchema = Joi.object({
+  id: Joi.string().uuid().optional(),
+  status: Joi.string().required(),
+  level: Joi.number().required(),
+  projectId: Joi.string().uuid().required(),
+});
 export const fetchAllProjectSchmea = creatProjectSchema.fork(Object.keys(creatProjectSchema.describe().keys), (schema) =>schema.optional());

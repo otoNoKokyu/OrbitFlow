@@ -21,6 +21,11 @@ export class MiddlewareModule implements NestModule {
                 { path: '/role/create', method: RequestMethod.POST },
                 { path: '/auth/verify', method: RequestMethod.POST },
                 { path: '/auth/sendOtp', method: RequestMethod.POST },
+                { path: '/auth/getInvitedEmail', method: RequestMethod.GET },
+                { path: '/auth/forget-password', method: RequestMethod.POST },
+                { path: '/auth/forgotPassword', method: RequestMethod.GET },
+                { path: '/auth/reset-password', method: RequestMethod.POST
+                 },
               )
               .forRoutes({path: '*', method: RequestMethod.ALL})
     }

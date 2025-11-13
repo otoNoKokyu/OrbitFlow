@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { BaseRepository } from 'src/common/repository.base';
 import { IssueStatus } from './model/issue_status.model';
+import { Sequelize } from 'sequelize';
+import { Op } from 'sequelize';
 
 @Injectable()
 export class IssueStatusRepository extends BaseRepository<IssueStatus> {
@@ -16,5 +18,14 @@ export class IssueStatusRepository extends BaseRepository<IssueStatus> {
   
     return await this.model.bulkCreate(defaultStatus, { transaction });
   }
-  
+  async fetchProjectStatus(projectIds?: string[]) {
+    return await this.model.findAll({
+     attributes:['status','id']
+      // where: projectIds.length ? {
+      //   projectId: {
+      //     [Op.in]: projectIds
+      //   }
+      // }: undefined
+    })
+  };
 }

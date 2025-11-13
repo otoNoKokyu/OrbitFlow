@@ -1,4 +1,5 @@
 export enum RedisPolicy {
     USER='user',
-    ISSUE='iss'
+    ISSUE='iss',
+    FORGOTPASSWORD='fp'
 }

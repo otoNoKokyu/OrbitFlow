@@ -5,6 +5,7 @@ import { Comment } from '../comment/model/comment.model';
 import { AtLeastOneAttribute, EntityAttributes, ModelAttributes } from 'src/common/interface/IBase';
 import { User } from '../user/model/User.model';
 import { CommentMention } from '../comment/model/comment_mentions.model';
+import { Projects } from '../project/entities/project.model';
 
 @Injectable()
 export class IssueRepository extends BaseRepository<Issue> {
@@ -15,9 +16,19 @@ export class IssueRepository extends BaseRepository<Issue> {
     const offset = (page - 1) * limit;
     const { rows, count } = await this.model.findAndCountAll({
       where: { ...filter },
+      attributes:["createdAt", "dueDate","name", "type", "priority",
+        'status',"projectIssueId"],
+      include:[
+      {
+        model: User,
+        as: 'assignee',
+        attributes:['username']
+      }
+    ],
+      
       limit,
       offset,
-      order: [['createdAt', 'DESC']],
+      order: [['createdAt', 'ASC']],
     });
     return {
       data: rows,
@@ -70,6 +81,6 @@ export class IssueRepository extends BaseRepository<Issue> {
     return await this.findOne(
         { id },
         ['assignee', 'reporter'],
-        ['projectIssueId', 'name', 'status', 'updatedAt'])
+        ['projectIssueId', 'name', 'status', 'updatedAt',"projectId"])
 }
 }

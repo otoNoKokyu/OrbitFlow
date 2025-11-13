@@ -15,29 +15,46 @@ import { CreateIssueSchema,updateIssueSchema, fetchAllIssueSchema } from './vali
 import { JoiValidationPipe } from 'src/common/pipes/schema.validation.pipe';
 import {  EntityAttributes, ModelCreationAttributes } from 'src/common/interface/IBase';
 import { Issue } from './model/issue.model';
-import { TAppUser } from 'src/utility/utility.type';
 import { TUpdateIssue } from './types/types.issues';
 import { BaseController } from 'src/common/controller.base';
 
 @Controller('issues')
 export class IssuesController extends BaseController<Issue> {
-  constructor(private readonly issuesService: IssuesService) {
-    super(issuesService)
-   }
+  constructor(private readonly issuesService: IssuesService) {super(issuesService)}
 
   @Post('/')
   @UsePipes(new JoiValidationPipe(CreateIssueSchema))
   async create(@Body() body: ModelCreationAttributes<Issue>) {
     return await this.issuesService.create(body)
   }
-
   @Get('/')
   @UsePipes(new JoiValidationPipe(fetchAllIssueSchema))
   async findAll(
     @Query() query?: EntityAttributes<Issue> & { page: number, limit: number },
   ) {
     const { page = 1, limit = 10, ...filters } = query || {};
-    return await this.issuesService.findAll(filters,page,limit);
+    const result =  await this.issuesService.findAll(filters,page,limit);
+    return {
+      ...result,
+      data: result.data.map((e) => {
+        const json = e.toJSON();
+        return {
+          ...json,
+          assignee: json.assignee?.username ?? null,
+          createdAt: new Date(json.createdAt).toLocaleDateString(),
+          dueDate: new Date(json.dueDate).toLocaleDateString()
+        };
+      })
+    
+  }
+}
+
+  @Get('/getfilter')
+  async getAllFilter(
+    @Req() { user:{userId} }: { user: { userId: string; roleId: string } }
+    
+  ) {
+    return await this.issuesService.getAllFilter(userId);
   }
 
   @Get(':id')
@@ -53,9 +70,4 @@ export class IssuesController extends BaseController<Issue> {
   ) {
     return await this.issuesService.update({id}, updateIssue);
   }
-
-  // @Delete(':id')
-  // remove(@Param('id', ParseUUIDPipe) id: string) {
-  //   return this.issuesService.remove(id);
-  // }
 }

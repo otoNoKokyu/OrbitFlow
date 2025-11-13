@@ -67,7 +67,6 @@ export class NotificationService {
 
     private async sendIssueNotification(recipient: string, issue: NotificationIssueType, prevIssue?: NotificationIssueType) {
         if (!prevIssue) prevIssue = {} as NotificationIssueType;
-
         Object.keys(issue).forEach((key) => {
             if (!issue[key] && key !== 'projectIssueId') {
                 delete issue[key];

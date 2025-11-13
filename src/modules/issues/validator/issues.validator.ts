@@ -9,7 +9,6 @@ export const CreateIssueSchema = Joi.object({
   attachments: Joi.array().items(Joi.string()).allow(null),
   assigneeId: Joi.string().uuid().allow(null),
   reporterId: Joi.string().uuid().required(),
-  status: Joi.string().max(50).required(),
   priority: Joi.string().max(50).required(),
   projectId: Joi.string().uuid().required(),
   sprintId: Joi.string().allow(null, ''),
@@ -22,8 +21,11 @@ export const fetchAllIssueSchema = CreateIssueSchema.fork(
   Object.keys(CreateIssueSchema.describe().keys),
   (schema) => schema.optional()
 ).append({
+  status: Joi.string().optional().allow(null, ''),
+  id: Joi.string().optional(),
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).default(10),
+  assignee: Joi.string().optional()
 });
 
 
@@ -34,6 +36,6 @@ export const updateIssueSchema = Joi.object({
   loggedTime: Joi.number().integer().min(0).optional().allow(null, ''),
   reporterId: Joi.string().uuid().optional().allow(null, ''),
   assigneeId: Joi.string().uuid().optional().allow(null, ''),
-  status: Joi.string().valid('To Do', 'In Progress', 'On Review').optional().allow(null, ''),
+  status: Joi.string().optional().allow(null, ''),
   priority: Joi.string().valid('Low', 'Medium', 'High', 'Critical').optional().allow(null, ''),
 });

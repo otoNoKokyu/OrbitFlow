@@ -40,16 +40,11 @@ export class UserService extends BaseService<User> {
     ): Promise<string> {
         const project = await this.projectService.findOne({ id: pId });
         if (!project) this.serviceException.throw('RESOURCE_CONFLICT', 'no project found');
-        const userProject = await this.userProjectService.findAll({
-            projectId: pId,
-            roleId,
-            userId
-        })
-        if (userProject.length) this.serviceException.throw('RESOURCE_CONFLICT', "User already present in Project")
         const encodeBody = {
+            email,
             projectId: pId,
             roleId,
-            inviterId: userId,
+            invited_by: userId,
         };
         const secretInvitationId = await this.jwtService.sign(encodeBody, JwtEncodables.INVITE);
         this.mailService.sendEmail(username, project.name, email, secretInvitationId);

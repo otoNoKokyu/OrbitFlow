@@ -6,6 +6,7 @@ import { fetchUserProjects } from './rawQueries';
 import { Projects } from './entities/project.model';
 import { User } from '../user/model/User.model';
 import { Roles } from '../role/model/roles.model';
+import { WhereOptions } from 'sequelize';
 @Injectable()
 export class UserProjectRepository extends BaseRepository<UserProject> {
   constructor() {
@@ -21,5 +22,35 @@ export class UserProjectRepository extends BaseRepository<UserProject> {
     })
     
     return this.rawQuery(fetchUserProjects(whereLiteral))
+  }
+    async findAll2(query?: Partial<ModelAttributes<UserProject>>): Promise<UserProject[]> {
+    const where: WhereOptions = {};
+
+    if (query) {
+      for (const [field, value] of Object.entries(query)) {
+        if (field === 'isActive') {
+          where[field] = value ? 1 : 0;
+        } else {
+          where[field] = value;
+        }
+      }
+    }
+
+    const data = await this.model.findAll({
+      where,
+      include: [
+        {
+          model: User,
+          attributes: ['user_id', 'username', 'email']
+        },
+        {
+          model: Projects,
+          attributes: ['id', 'name']
+        }
+      ],
+      raw: true,
+      nest: true
+    });
+    return data;
   }
 }

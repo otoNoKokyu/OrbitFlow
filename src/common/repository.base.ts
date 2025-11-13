@@ -6,7 +6,8 @@ import {
   QueryTypes, 
   WhereOptions, 
   Transaction, 
-  Sequelize
+  Sequelize,
+  Attributes
 } from 'sequelize';
 import { 
   IBaseRepository, 
@@ -39,7 +40,7 @@ export class BaseRepository<T extends Model> implements IBaseRepository<T> {
   }
   
   
-  async findAll(query?: Partial<ModelAttributes<T>>, transaction?: Transaction): Promise<ModelAttributes<T>[]> {
+  async findAll(query?: Partial<ModelAttributes<T>> | WhereOptions<Attributes<T>>, transaction?: Transaction): Promise<ModelAttributes<T>[]> {
     const data = await this.model.findAll({
       where: query as unknown as WhereOptions<T>,
       transaction,

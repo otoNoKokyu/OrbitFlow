@@ -7,4 +7,8 @@ export class ProjectRepository extends BaseRepository<Projects> {
   constructor() {
     super(Projects)
   }
+
+  async fetchIssueStatus(){
+    
+  }
 }

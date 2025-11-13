@@ -17,7 +17,7 @@ export type TVerify = {
     otp: number;
 }
 export type TForgetPassword = {
-    email:string;
-    newPassword: string;
+    token:string;
+    password: string;
     confirmPassword: string;
 }

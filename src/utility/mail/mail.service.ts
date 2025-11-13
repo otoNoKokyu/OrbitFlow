@@ -37,6 +37,7 @@ export class MailService {
   }
   async sendResetPasswordLink({ name, email, resetLink }: { name: string, email: string, resetLink: string }) {
     const htmlTemplate = fs.readFileSync(path.join(__dirname, '../../assets/email/resetPassword.html'), 'utf-8');
+    console.log(resetLink)
     const htmlContent = htmlTemplate
       .replace('<placeholder1>', name)
       .replace('<placeholder2>', resetLink);

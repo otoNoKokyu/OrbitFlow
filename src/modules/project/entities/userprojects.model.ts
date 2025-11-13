@@ -1,4 +1,4 @@
-import { Column, DataType, Default, ForeignKey, Model, Table } from 'sequelize-typescript';
+import { BelongsTo, Column, DataType, Default, ForeignKey, Model, Table } from 'sequelize-typescript';
 import { Projects } from 'src/modules/project/entities/project.model';
 import { User } from 'src/modules/user/model/User.model';
 import { Roles } from 'src/modules/role/model/roles.model';
@@ -22,6 +22,11 @@ export class UserProject extends Model<UserProject> {
     allowNull: false,
   })
   projectId: string;
+  @BelongsTo(() => User)
+  user: User;
+
+  @BelongsTo(() => Projects)
+  project: Projects;
 
   @ForeignKey(() => User)
   @Column({

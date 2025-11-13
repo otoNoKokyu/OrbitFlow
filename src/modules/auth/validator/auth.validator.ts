@@ -3,17 +3,16 @@ import * as Joi from 'joi';
 
 export const SignInSchema = Joi.object({
   email: Joi.string().email().required(),
-  password: Joi.string().min(6).max(50).required(),
+  password: Joi.string().max(50).required(),
 });
 
 export const ForgetPasswordSchema = Joi.object({
-  email: Joi.string()
-    .email()
+  token: Joi.string()
     .required()
     .messages({
-      'any.required': 'Email is required.',
+      'any.required': 'token is required.',
     }),
-  newPassword: Joi.string()
+  password: Joi.string()
     .min(8)
     .max(30)
     .pattern(new RegExp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$'))
@@ -25,7 +24,7 @@ export const ForgetPasswordSchema = Joi.object({
       'any.required': 'New password is required.',
     }),
   confirmPassword: Joi.string()
-    .valid(Joi.ref('newPassword'))
+    .valid(Joi.ref('password'))
     .required()
     .messages({
       'any.only': 'Confirm password must match new password.',
@@ -43,19 +42,24 @@ export const userSchema = Joi.object({
   date_of_birth: Joi.date().optional(),
   gender: Joi.string().valid('Male', 'Female', 'Other').optional(),
   phone_number: Joi.string().max(20).optional(),
-  address: Joi.string().optional(),
-  city: Joi.string().max(50).optional(),
-  state: Joi.string().max(50).optional(),
-  country: Joi.string().max(50).optional(),
-  zip_code: Joi.string().max(20).optional(),
+  address: Joi.string().optional().allow('',null),
+  city: Joi.string().max(50).optional().allow('',null),
+  state: Joi.string().max(50).optional().allow('',null),
+  country: Joi.string().max(50).optional().allow('',null),
+  zip_code: Joi.string().max(20).optional().allow('',null),
   profile_picture_url: Joi.string().uri().optional(),
   created_at: Joi.date().optional(),
   updated_at: Joi.date().optional(),
   last_login: Joi.date().optional(),
-  is_active: Joi.boolean().default(true),
+  is_active: Joi.boolean().default(true).allow('',null),
   access_token: Joi.string().optional(),
   refresh_token: Joi.string().optional(),
   roleId: Joi.string().uuid().optional(),
   isInvited: Joi.boolean().default(false),
-  invited_by: Joi.string().uuid().optional()
+  projectId: Joi.string().when('IsInvited',{
+    is:true,
+    then: Joi.required(),
+    otherwise:Joi.optional()
+  }),
+  invited_by: Joi.string().uuid().optional().allow('',null),
 }).unknown(false);

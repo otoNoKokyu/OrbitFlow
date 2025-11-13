@@ -37,6 +37,7 @@
     "ejs": "^3.1.10",
     "handlebar": "^1.0.0",
     "handlebars": "^4.7.8",
+    "hbs": "^4.2.0",
     "ioredis": "^5.4.1",
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",

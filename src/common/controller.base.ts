@@ -20,7 +20,7 @@ export class BaseController<T extends Model<any, any>> implements IBaseControlle
       totalRecords: number; 
       totalPages: number; 
       currentPage: any; 
-    }
+    } | any
   > {
     return this.service.findAll(query);
   }

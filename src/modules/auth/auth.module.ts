@@ -20,15 +20,31 @@ import { UserSecurityModule } from 'src/utility/user-security/user-security.modu
       provide: 'USER_POLICY',  
       useValue: RedisPolicy.USER,  
     },
+        {
+      provide: 'FP_POLICY',  
+      useValue: RedisPolicy.FORGOTPASSWORD,  
+    },
     {
       provide: 'serviceException',  
       useValue: ServiceException,  
     },
     {
-      provide: RedisService,
-      useFactory: (policy: RedisPolicy,exceptionClass: ServiceException<ERR_TYPE>) => new RedisService(new Redis(), policy,exceptionClass),
-      inject: ['USER_POLICY','serviceException'],
-      scope: Scope.REQUEST, 
+      provide: 'UserRedisService',
+      useFactory: (
+        userPolicy: RedisPolicy,
+        exceptionClass: ServiceException<any>,
+      ) => new RedisService(new Redis(), userPolicy, exceptionClass),
+      inject: ['USER_POLICY', 'serviceException'],
+      scope: Scope.REQUEST,
+    },
+    {
+      provide: 'FpRedisService',
+      useFactory: (
+        adminPolicy: RedisPolicy,
+        exceptionClass: ServiceException<any>,
+      ) => new RedisService(new Redis(), adminPolicy, exceptionClass),
+      inject: ['FP_POLICY', 'serviceException'],
+      scope: Scope.REQUEST,
     },
   ],
   controllers: [AuthController]

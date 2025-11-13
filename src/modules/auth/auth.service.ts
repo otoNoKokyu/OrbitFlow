@@ -14,29 +14,43 @@ import { UserSecurityService } from 'src/utility/user-security/user-security.ser
 import { RoleService } from '../role/role.service';
 import { RoleEnum } from '../role/utility/roles.enum';
 import { TForgetPassword } from './types/auth.types';
+import { UserRepository } from '../user/user.repository';
+import { Roles } from '../role/model/roles.model';
+import { isEmptyObject } from 'src/utility/NullishUtills';
 @Injectable()
 export class AuthService {
     constructor(
         @Inject('ServiceException') private serviceException: ServiceException<ERR_TYPE>,
         private userService: UserService,
         private jwtService: JwtService,
-        private redisService: RedisService,
+        // private redisService: RedisService,
+        @Inject('UserRedisService') private readonly redisService: RedisService,
+        @Inject('FpRedisService') private readonly fpRedisService: RedisService,
         private mailService: MailService,
         private userProjectService: UserProjectService,
         private userSecurityService: UserSecurityService,
-        private roleService: RoleService
+        private roleService: RoleService,
+        private userRepository: UserRepository,
     ) {
     }
     async signIn(data: { email: string, password: string }) {
         const { email, password } = data
-        const userExist = await this.userService.findOne({ email });
+        const userExist = await this.userRepository.findOne(
+            { email },
+            [
+                {
+                    model: Roles,
+                    attributes: ['role']
+                }
+            ]
+        );
         if (!userExist) this.serviceException.throw('RESOURCE_CONFLICT', 'user not found')
-        const { password_hash, roleId, user_id } = userExist
+        const { password_hash, user_id, role } = userExist
 
         const isPwdValid = await comparePwd(password_hash, password)
         if (!isPwdValid) this.serviceException.throw('RESOURCE_CONFLICT', 'password does not match')
 
-        const encodeBody = { userId: user_id, role: roleId, username: userExist.username }
+        const encodeBody = { userId: user_id, username: userExist.username, role: role.role, roleId: userExist.roleId }
 
         const [access_token, refresh_token] = await Promise.all([
             this.jwtService.sign(encodeBody, JwtEncodables.ACCESS_TOKEN),
@@ -46,7 +60,7 @@ export class AuthService {
         await this.userService.update({ access_token, refresh_token }, { user_id: user_id })
         return { username: userExist.username, access_token, refresh_token }
     }
-    async signUp(data:  ModelCreationAttributes<User> & {projectId:string}) {
+    async signUp(data: ModelCreationAttributes<User> & { projectId: string }) {
         const { username, email, phone_number, first_name, invited_by } = data
         const filter = {
             username,
@@ -60,52 +74,77 @@ export class AuthService {
         const hasedPwd = await hashFn(data.password_hash);
         data.password_hash = hasedPwd
 
-        if(data.projectId) {
+        if (data.projectId) {
             const invitedRoleId = data.roleId
-            delete data.roleId
             const user = await this.userService.create(data)
+            delete data.roleId
             await this.userProjectService.create({
-                projectId:data.projectId,
+                projectId: data.projectId,
                 roleId: invitedRoleId,
                 userId: user.user_id,
                 isActive: true
             })
             return user;
         }
-        const {role_id} = await this.roleService.findOne({role: RoleEnum.ADMIN})
-        const user = await this.userService.create({...data, roleId: role_id})
+        const { role_id } = await this.roleService.findOne({ role: RoleEnum.ADMIN })
+        const user = await this.userService.create({ ...data, roleId: role_id })
         return user
 
 
     }
     async token(token: string) {
-        const decoded: any = this.jwtService.verify(token, JwtEncodables.REFRESH_TOKEN)
-        const doesExist = await this.userService.findOne({ user_id: decoded.userId })
-        if (!doesExist.is_active) throw this.serviceException.throw('RESOURCE_CONFLICT', 'user not active')
+        try {
+            const decoded = this.jwtService.verify(token, JwtEncodables.REFRESH_TOKEN)
+            const doesExist = await this.userService.findOne({ user_id: decoded.userId })
+            if (!doesExist?.is_active) throw this.serviceException.throw('RESOURCE_CONFLICT', 'user not active')
 
-        const encodeBody = { userId: decoded.userId, role: decoded.role, username: decoded.username }
-        const [access_token, refresh_token] = await Promise.all([
-            this.jwtService.sign(encodeBody, JwtEncodables.ACCESS_TOKEN),
-            this.jwtService.sign(encodeBody, JwtEncodables.REFRESH_TOKEN),
-        ])
-        await this.userService.update({ access_token, refresh_token }, { user_id: doesExist.user_id })
-        return { username: doesExist.username, access_token, refresh_token }
+            const encodeBody = { userId: decoded.userId, role: decoded.role, username: decoded.username, roleId: decoded.roleI }
+            const [access_token, refresh_token] = await Promise.all([
+                this.jwtService.sign(encodeBody, JwtEncodables.ACCESS_TOKEN),
+                this.jwtService.sign(encodeBody, JwtEncodables.REFRESH_TOKEN),
+            ])
+            await this.userService.update({ access_token, refresh_token }, { user_id: doesExist.user_id })
+            return { username: doesExist.username, access_token, refresh_token }
+        } catch (err) {
+            console.log(err)
+        }
+
     }
     async forgotPassword(email: string): Promise<void> {
         const user = await this.userService.findOne({ email: email });
         if (!user) this.serviceException.throw('NOT_FOUND', 'user not found for this email')
+        const shortLivedHash = await this.jwtService.sign({ userId: user.user_id }, JwtEncodables.RESET_PASSWORD)
+        await this.fpRedisService.setTempData(user.user_id,shortLivedHash,900)
         await this.mailService.sendResetPasswordLink({
             email,
             name: user.first_name,
-            resetLink: `localhost:${process.env.PORT}/auth/reset-password`
+            resetLink: `http://localhost:3000/auth/forgotPassword?hash=${shortLivedHash}`
         });
     }
+    async verifyForgotPasswordLink(hash: string) {
+        try{
+            const {userId} = await this.jwtService.verify(hash,JwtEncodables.RESET_PASSWORD)
+            const data  = await this.fpRedisService.getTempData(userId)
+            if(isEmptyObject(data)) return false;
+            return true
+        }catch(error){
+            console.error(error)
+            return false
+        }
+
+    }
     async resetPassword(model: TForgetPassword): Promise<void> {
-        const { email, newPassword } = model;
-        const user = this.userService.findOne({ email });
+        const { token, password } = model;
+        const verifiedToken = await this.jwtService.verify(token,JwtEncodables.RESET_PASSWORD)
+        const {userId} = verifiedToken
+        const user = await this.userService.findOne({ user_id:userId });
         if (!user) this.serviceException.throw('NOT_FOUND', 'user not found!');
-        this.userSecurityService.sendOtp({ email, resend: false });
-        const newHasedPwd = await hashFn(newPassword)
-        this.userService.update({ email }, { password_hash: newHasedPwd });
+        const newHasedPwd = await hashFn(password)
+        await this.userService.update({ user_id: user.user_id }, { password_hash: newHasedPwd });
+        await this.fpRedisService.dropTempData(userId)
+    }
+    async getInvitedUserEmail(encodedInviteToken: string) {
+        const decodedToken = await this.jwtService.verify(encodedInviteToken, JwtEncodables.INVITE)
+        return { email: decodedToken.email }
     }
 }

@@ -1,16 +1,20 @@
+import { RoleEnum } from "src/modules/role/utility/roles.enum";
+
 export enum JwtEncodables {
     ACCESS_TOKEN =  'JWT_SECRET',
     REFRESH_TOKEN = 'JWT_REFRESH_SECRET',
-    INVITE = 'JWT_INVITE_SECRET'
+    INVITE = 'JWT_INVITE_SECRET',
+    RESET_PASSWORD = 'JWT_RESET_PASSWORD'
 }
 export enum JwtEncodableExpiry{
-    arko =  '1d',
+    arko =  '24h',
     cholbe = '7d',
-    hello = '1d'
+    hello = '1d',
+    RESET = '15m'
 }
 export type TAppUser = {
     userId:string;
-    role:string;
+    role:RoleEnum;
     username: string;
     roleId:string
 }
