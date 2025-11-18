@@ -5,7 +5,6 @@ import { ERR_TYPE } from 'src/interface/CustomError';
 import { BaseService } from 'src/common/service.base';
 import { Issue } from './model/issue.model';
 import { AtLeastOneAttribute, EntityAttributes, ModelCreationAttributes } from 'src/common/interface/IBase';
-import { NotificationService } from '../notification/notification.service';
 import { ProjectRepository } from '../project/project.repository';
 import { RedisService } from 'src/utility/redis/redis.service';
 import _ from 'lodash'
@@ -49,6 +48,11 @@ export class IssuesService extends BaseService<Issue> {
     const count = await Issue.count({ where: { projectId: issue.projectId } });
     return `${prefix}-${count + 1}`;
   }
+  private stripEmptyProperty(data: ModelCreationAttributes<Issue>): Partial<ModelCreationAttributes<Issue>> {
+    return Object.fromEntries(
+      Object.entries(data).filter(([, v]) => v !== undefined && v !== null && v !== "")
+    );
+  }
   async create(data: ModelCreationAttributes<Issue>) {
     const existingIssue = await this.IssueRepository.findOne({ name: data.name, projectId: data.projectId, type: data.type })
     if (existingIssue) throw this.serviceException.throw('RESOURCE_CONFLICT', 'Issue already exists')
@@ -57,19 +61,24 @@ export class IssuesService extends BaseService<Issue> {
       projectId: data.projectId,
       level: 0
     })
-    const issue = await this.IssueRepository.create({ ...data, projectIssueId, status: issueStatus.status })
+    if(data.estimate > 0) data.dueDate = new Date(Date.now() + data.estimate * 60 * 60 * 1000);
+    if(!data.priority) data.priority = 'Low';
+    const createBody = this.stripEmptyProperty({ ...data, projectIssueId, status: issueStatus.status })
+    const issue = await this.IssueRepository.create(createBody)
     const popultaedIssue = await this.IssueRepository.findIssueForNotification(issue.id)
     if (!isEmptyObject(popultaedIssue)) this.redisService.setTempData(issue.id, popultaedIssue, 7200)
-    this.eventEmmiter.emitAsync(NotificationType.ISSUE_CREATE,issue)
+    await this.eventEmmiter.emitAsync(NotificationType.ISSUE_CREATE, issue)
     return issue;
   }
   async findAll(query: EntityAttributes<Issue>, page = 1, limit = 10) {
     return await this.IssueRepository.findAndCountAll(query, page, limit)
   }
-
-  async checkIssueStatus(projectId:string, status:string) {
-    const statuses = await this.IssueStatusRepository.findOne({projectId,status})
-    if(isEmptyObject(statuses)) return false
+  async findById(projectIssueId:string) {
+    return await this.IssueRepository.findOne({projectIssueId},['assignee','reporter','project'])
+  }
+  async checkIssueStatus(projectId: string, status: string) {
+    const statuses = await this.IssueStatusRepository.findOne({ projectId, status })
+    if (isEmptyObject(statuses)) return false
     else return true
   }
 
@@ -79,8 +88,8 @@ export class IssuesService extends BaseService<Issue> {
   ) {
     // let storedData = await this.redisService.getTempData(filter.id)
     // if (!storedData)
-      let storedData = await this.IssueRepository.findIssueForNotification(filter.id)
-    if(!await this.checkIssueStatus(storedData.projectId, storedData.status)) throw this.serviceException.throw('RESOURCE_CONFLICT','status not allowed')
+    let storedData = await this.IssueRepository.findIssueForNotification(filter.id)
+    if (!await this.checkIssueStatus(storedData.projectId, storedData.status)) throw this.serviceException.throw('RESOURCE_CONFLICT', 'status not allowed')
 
     if (body.loggedTime || body.estimate) {
       const issue = await this.IssueRepository.findOne({ id: filter.id }, null, ['loggedTime', 'estimate'])
@@ -88,17 +97,17 @@ export class IssuesService extends BaseService<Issue> {
       body.remaining = remaining
     }
     const [affectedCount] = await this.IssueRepository.update(filter, body);
-    if( body.status ) {
+    if (body.status) {
 
     }
     if (affectedCount > 0) {
-      this.eventEmmiter.emitAsync(NotificationType.ISSUE_ATTRIBUTES_CHANGE,body,storedData)
+      this.eventEmmiter.emitAsync(NotificationType.ISSUE_ATTRIBUTES_CHANGE, body, storedData)
       await this.redisService.dropTempData(filter.id)
       return 'update successful'
     }
     else return 'update unsuccessful'
   }
-  async getAllFilter (userId:string){
+  async getAllFilter(userId: string) {
     const projectsRaw = await this.IssueRepository.findAll({
       [Op.or]: [
         { assigneeId: userId },
@@ -107,10 +116,10 @@ export class IssuesService extends BaseService<Issue> {
     })
 
     const projects = (await this.projectRepository.findAll({
-        id: {
-          [Op.in]: _.uniq(projectsRaw.map(e => e.projectId))
-        }
-    })).map((e)=>{return {name:e.name,id:e.id}})
+      id: {
+        [Op.in]: _.uniq(projectsRaw.map(e => e.projectId))
+      }
+    })).map((e) => { return { name: e.name, id: e.id } })
     const status = (await this.IssueStatusRepository.fetchProjectStatus())
     const types = [
       { id: 1, type: 'task' },
@@ -123,7 +132,7 @@ export class IssuesService extends BaseService<Issue> {
       { id: 2, priority: 'Low' },
       { id: 3, priority: 'Medium' },
     ];
-    return{projects,status,types,priorities}
+    return { projects, status, types, priorities }
   }
 
 

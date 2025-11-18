@@ -21,6 +21,10 @@ export class NotificationService {
     @OnEvent(NotificationType.ISSUE_CREATE)
     private async handleIssueCreate(issue: EntityAttributes<Issue>) {
         const popultaedIssue = await this.issueRepository.findIssueForNotification(issue.id);
+        if(!popultaedIssue.assignee?.email) {
+            console.info('Issue created without assignee')
+            return
+        }
         await this.recieveIssueNotification([popultaedIssue.assignee.email], popultaedIssue)
     }
     @OnEvent(NotificationType.ISSUE_ATTRIBUTES_CHANGE)

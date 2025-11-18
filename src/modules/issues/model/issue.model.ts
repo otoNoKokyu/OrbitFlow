@@ -49,16 +49,21 @@ export class Issue extends Model<Issue> {
   assignee: User;
 
   @ForeignKey(() => User)
-  @Column({ type: DataType.UUID, allowNull: false })
+  @Column({ type: DataType.UUID, allowNull: true })
   reporterId: string;
+  @ForeignKey(() => User)
+  @Column({ type: DataType.UUID, allowNull: true })
+  createdBy: string;
 
+  @BelongsTo(() => User, 'reporterId')
+  creator: User;
   @BelongsTo(() => User, 'reporterId')
   reporter: User;
 
   @Column({ type: DataType.STRING, allowNull: false })
   status: string;
 
-  @Column({ type: DataType.STRING, allowNull: false })
+  @Column({ type: DataType.STRING, allowNull: true })
   priority: string;
 
   @ForeignKey(() => Projects)
@@ -89,6 +94,6 @@ export class Issue extends Model<Issue> {
 
   @HasMany(() => Comment, 'issue_id')
   comments: Comment[];
-  
+
 
 }

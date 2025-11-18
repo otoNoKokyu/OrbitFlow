@@ -13,6 +13,9 @@ import Redis from 'ioredis';
 import { UserRepository } from '../user/user.repository';
 import { EventBusModule } from '../shared/event-bus.module';
 import { AttachmentMiddleware } from 'src/middlewares/issue/fileupload.middleware';
+import multer from 'multer';
+
+const upload = multer({ storage: multer.memoryStorage() }).array('attachments');
 
 @Module({
   imports: [EventBusModule],
@@ -38,9 +41,9 @@ import { AttachmentMiddleware } from 'src/middlewares/issue/fileupload.middlewar
 export class IssuesModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply(AttachmentMiddleware)
+      .apply(upload,AttachmentMiddleware)
       .forRoutes({
-        path: '',
+        path: 'issues',
         method: RequestMethod.POST,
       });
   }

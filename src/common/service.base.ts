@@ -24,7 +24,7 @@ export class BaseService<T extends Model<any, any>> implements IBaseService<T> {
     return await this.repository.create(body);
   }
 
-  async findAll(query?: EntityAttributes<T>): Promise<any>{
+  async findAll(query?: EntityAttributes<T>): Promise<ModelAttributes<T>[] | null>{
     return await this.repository.findAll(query);
   }
 

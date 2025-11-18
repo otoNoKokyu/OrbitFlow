@@ -17,37 +17,45 @@ import {  EntityAttributes, ModelCreationAttributes } from 'src/common/interface
 import { Issue } from './model/issue.model';
 import { TUpdateIssue } from './types/types.issues';
 import { BaseController } from 'src/common/controller.base';
+import { isEmptyObject } from 'src/utility/NullishUtills';
 
 @Controller('issues')
 export class IssuesController extends BaseController<Issue> {
   constructor(private readonly issuesService: IssuesService) {super(issuesService)}
 
   @Post('/')
-  @UsePipes(new JoiValidationPipe(CreateIssueSchema))
-  async create(@Body() body: ModelCreationAttributes<Issue>) {
-    return await this.issuesService.create(body)
+  // @UsePipes(new JoiValidationPipe(CreateIssueSchema))
+  async create(@Body() body: ModelCreationAttributes<Issue>, @Req() req: Request) {
+    return await this.issuesService.create({...body,createdBy: req.user.userId})
   }
-  @Get('/')
-  @UsePipes(new JoiValidationPipe(fetchAllIssueSchema))
-  async findAll(
-    @Query() query?: EntityAttributes<Issue> & { page: number, limit: number },
-  ) {
-    const { page = 1, limit = 10, ...filters } = query || {};
-    const result =  await this.issuesService.findAll(filters,page,limit);
-    return {
-      ...result,
-      data: result.data.map((e) => {
-        const json = e.toJSON();
-        return {
-          ...json,
-          assignee: json.assignee?.username ?? null,
-          createdAt: new Date(json.createdAt).toLocaleDateString(),
-          dueDate: new Date(json.dueDate).toLocaleDateString()
-        };
-      })
-    
-  }
+@Get('/')
+@UsePipes(new JoiValidationPipe(fetchAllIssueSchema))
+async findAll(
+  @Query() query: EntityAttributes<Issue> & { page: number; limit: number },
+  @Req() req: Request
+) {
+  const { page = 1, limit = 10, ...filters } = query || {};
+
+  // if (isEmptyObject(filters)) filters.assigneeId = req.user.userId;
+
+  const result = await this.issuesService.findAll(filters, page, limit);
+
+  return {
+    ...result,
+    data: result.data.map((e) => {
+      const json = e.toJSON();
+      return {
+        ...json,
+        assignee: json.assignee?.username ?? null,
+        createdAt: new Date(json.createdAt).toLocaleDateString(),
+        dueDate: json.dueDate
+          ? new Date(json.dueDate).toLocaleDateString()
+          : null,
+      };
+    }),
+  };
 }
+
 
   @Get('/getfilter')
   async getAllFilter(
@@ -57,9 +65,9 @@ export class IssuesController extends BaseController<Issue> {
     return await this.issuesService.getAllFilter(userId);
   }
 
-  @Get(':id')
-  async findOne(@Param('id', ParseUUIDPipe) id: string) {
-      return await super.findById(id);
+  @Get(':projIssueId')
+  async findOne(@Param('projIssueId') projIssueId: string) {
+      return await this.issuesService.findById(projIssueId);
   }
 
   @Put(':id')
