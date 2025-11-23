@@ -74,7 +74,7 @@ export class IssuesService extends BaseService<Issue> {
     return await this.IssueRepository.findAndCountAll(query, page, limit)
   }
   async findById(projectIssueId:string) {
-    return await this.IssueRepository.findOne({projectIssueId},['assignee','reporter','project'])
+    return await this.IssueRepository.findOne({projectIssueId},['assignee','reporter','project','subtask'])
   }
   async checkIssueStatus(projectId: string, status: string) {
     const statuses = await this.IssueStatusRepository.findOne({ projectId, status })

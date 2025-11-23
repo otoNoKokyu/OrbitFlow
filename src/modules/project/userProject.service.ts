@@ -28,7 +28,4 @@ export class UserProjectService extends BaseService<UserProject> {
     if(doesExist) throw this.serviceException.throw('RESOURCE_CONFLICT','user already exist in project')
     return await this.userProjectRepository.create(body,transaction)
   }
-  // async rawQuery(query?: string, type: rqType = 'fetchUserProject'): Promise<ModelAttributes<UserProject> | any> {
-  //   if(type = 'fetchUserProject') return super.rawQuery(fetchUserProjects)
-  // }
 }

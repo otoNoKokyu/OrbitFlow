@@ -6,57 +6,79 @@ import { AtLeastOneAttribute, EntityAttributes, ModelAttributes } from 'src/comm
 import { User } from '../user/model/User.model';
 import { CommentMention } from '../comment/model/comment_mentions.model';
 import { Projects } from '../project/entities/project.model';
+import { Op, Sequelize } from 'sequelize';
 
 @Injectable()
 export class IssueRepository extends BaseRepository<Issue> {
   constructor() {
     super(Issue)
   }
-async findAndCountAll(filter: Partial<Issue>, page: number, limit: number) {
-  const offset = (page - 1) * limit;
+  async findAndCountAll(
+    filter: Partial<Issue> & { anyKey?: string },
+    page: number,
+    limit: number
+  ) {
+    const offset = (page - 1) * limit;
 
-  // 1. DB: Only paginate (no WHERE)
-  const { rows, count } = await this.model.findAndCountAll({
-    attributes: [
-      'createdAt',
-      'dueDate',
-      'name',
-      'type',
-      'priority',
-      'status',
-      'projectIssueId',
-    ],
-    include: [
-      {
-        model: User,
-        as: 'assignee',
-        attributes: ['username'],
-      },
-    ],
-    limit,
-    offset,
-    order: [['createdAt', 'ASC']],
-  });
+    const where: any = {};
 
-  const filtered = rows.filter((row) =>
-    Object.entries(filter).every(([key, val]) => {
-      return val === undefined || row[key] === val;
-    })
-  );
+    Object.entries(filter).forEach(([key, val]) => {
+      if (key !== "anyKey" && val !== undefined) {
+        where[key] = val;
+      }
+    });
 
-  // 3. Return filtered page + original total (unfiltered)
-  return {
-    data: filtered,
-    totalRecords: count,                    // total in DB (unfiltered)
-    totalPages: Math.ceil(count / limit),   // based on full count
-    currentPage: page,
-  };
-}
+    if (filter.anyKey && String(filter.anyKey).trim() !== "") {
+      const q = String(filter.anyKey).toLowerCase();
+      where[Op.or] = [
+        Sequelize.where(
+          Sequelize.fn("LOWER", Sequelize.col("Issue.name")),
+          { [Op.like]: `%${q}%` }
+        ),
+        Sequelize.where(
+          Sequelize.fn("LOWER", Sequelize.col("Issue.projectIssueId")),
+          { [Op.like]: `%${q}%` }
+        ),
+      ];
+    }
+
+    const { rows, count } = await this.model.findAndCountAll({
+      where,
+      attributes: [
+        "createdAt",
+        "dueDate",
+        "name",
+        "type",
+        "priority",
+        "status",
+        "projectIssueId",
+      ],
+      include: [
+        {
+          model: User,
+          as: "assignee",
+          attributes: ["first_name", "last_name"],
+        },
+      ],
+      limit,
+      offset,
+      order: [["createdAt", "ASC"]],
+    });
+
+
+    // 3. Return filtered page + original total (unfiltered)
+    return {
+      data: rows,
+      totalRecords: count,                    // total in DB (unfiltered)
+      totalPages: Math.ceil(count / limit),   // based on full count
+      currentPage: page,
+    };
+  }
   async findOne(
     query: AtLeastOneAttribute<Issue>,
-    populatedFileds? : Array< 'assignee' | 'reporter' | 'project'>,
+    populatedFileds?: Array<'assignee' | 'reporter' | 'project' | 'subtask'>,
     attributes?: Array<keyof Partial<EntityAttributes<Issue>>>,
-  ):Promise<ModelAttributes<Issue>> {
+  ): Promise<ModelAttributes<Issue>> {
     const queryFilter: any = {
       where: query,
       include: [
@@ -66,7 +88,7 @@ async findAndCountAll(filter: Partial<Issue>, page: number, limit: number) {
           include: [
             {
               model: CommentMention,
-              as: 'mentions', 
+              as: 'mentions',
               include: [
                 {
                   model: User,
@@ -75,34 +97,52 @@ async findAndCountAll(filter: Partial<Issue>, page: number, limit: number) {
                 },
               ],
             },
+            {
+        model: User,
+        as: 'author',
+        attributes: ['first_name', 'last_name', 'profile_picture_url'],
+      },
           ],
         },
       ],
     };
+    if (populatedFileds?.includes('subtask')) {
+      queryFilter.include.push({
+        model: Issue,
+        as: 'subtasks',
+        include: [
+          {
+            model: User,
+            as: 'assignee',
+            attributes: ['first_name', 'profile_picture_url',],
+          }],
+        attributes: ['id', 'assigneeId', 'name', 'projectIssueId'],
+      });
+    }
 
-    if(populatedFileds.includes('reporter')) queryFilter.include.push({ model: Projects, as: 'project', attributes:['id','name'] })
-  
+    if (populatedFileds?.includes('reporter')) queryFilter.include.push({ model: Projects, as: 'project', attributes: ['id', 'name'] })
+
     if (populatedFileds?.includes('assignee')) {
       const popObj = { model: User, as: 'assignee' }
-       popObj['attributes'] = ['username','first_name','last_name','profile_picture_url','user_id',"email"]
+      popObj['attributes'] = ['username', 'first_name', 'last_name', 'profile_picture_url', 'user_id', "email"]
       queryFilter.include.push(popObj);
     }
-    
+
     if (populatedFileds?.includes('reporter')) {
       const popObj = { model: User, as: 'reporter' }
-       popObj['attributes'] = ['username','first_name','last_name','profile_picture_url','user_id',"email"]
+      popObj['attributes'] = ['username', 'first_name', 'last_name', 'profile_picture_url', 'user_id', "email"]
       queryFilter.include.push(popObj);
     }
-  
-    if(attributes?.length) queryFilter['attributes'] = attributes
 
-    const issue =  await this.model.findOne(queryFilter)
+    if (attributes?.length) queryFilter['attributes'] = attributes
+
+    const issue = await this.model.findOne(queryFilter)
     return issue?.toJSON();
   }
   async findIssueForNotification(id: string) {
     return await this.findOne(
-        { id },
-        ['assignee', 'reporter'],
-        ['projectIssueId', 'name', 'status', 'updatedAt',"projectId"])
-}
+      { id },
+      ['assignee', 'reporter'],
+      ['projectIssueId', 'name', 'status', 'updatedAt', "projectId"])
+  }
 }

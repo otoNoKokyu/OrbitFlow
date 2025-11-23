@@ -38,5 +38,15 @@ export class UserProjectController extends BaseController<UserProject> {
       roleId: roleId,
     });
   }
+    @Get('/users')
+  @UsePipes(new JoiValidationPipe(fetchAllUserProjectSchema))
+  public async findUsersInProject(
+    @Query() query?: EntityAttributes<UserProject>
+  ){
+    return this.userProjectService.findAll({
+      ...query,
+    });
+  }
+  
   
 }

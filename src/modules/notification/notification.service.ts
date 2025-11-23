@@ -21,7 +21,7 @@ export class NotificationService {
     @OnEvent(NotificationType.ISSUE_CREATE)
     private async handleIssueCreate(issue: EntityAttributes<Issue>) {
         const popultaedIssue = await this.issueRepository.findIssueForNotification(issue.id);
-        if(!popultaedIssue.assignee?.email) {
+        if (!popultaedIssue.assignee?.email) {
             console.info('Issue created without assignee')
             return
         }
@@ -35,13 +35,13 @@ export class NotificationService {
         else return
     }
     @OnEvent(NotificationType.ISSUE_COMMENT_CHANGE)
-    private async handleCommentUpdate({comment,emails,issueId}:{issueId:string, emails: string[], comment:  string }) {
+    private async handleCommentUpdate({ comment, emails, issueId }: { issueId: string, emails: string[], comment: string }) {
         const [usersEmail, issue] = await Promise.all(
             [this.userRepo.findBulkByProperty('user_id', emails),
-            this.issueRepository.findOne({ id: issueId}, null, ['projectIssueId'])
+            this.issueRepository.findOne({ id: issueId }, null, ['projectIssueId'])
             ]
-          )
-        return await this.recieveIssueNotification(usersEmail.map(e=>e.email), {comment,projectIssueId:issue.projectIssueId})
+        )
+        return await this.recieveIssueNotification(usersEmail.map(e => e.email), { comment, projectIssueId: issue.projectIssueId })
     }
     private resolveNotificationRecipient(body: EntityAttributes<Issue>) {
         const recipientEmails: string[] = []
@@ -121,8 +121,20 @@ export class NotificationService {
         }
     }
     public async recieveIssueNotification(recipients: string[], details: Partial<Issue> & { comment?: string }, prevDetails?: Partial<Issue>) {
-        console.log(recipients);
+        details.comment = this.sanitizeCommentForEmail(details.comment)
         const allEmailSendings = recipients.map(e => this.sendIssueNotification(e, this.getIssueDataForNotification(details), this.getIssueDataForNotification(prevDetails)))
         return await Promise.allSettled(allEmailSendings).catch(err => console.error(err))
+    }
+    public sanitizeCommentForEmail(raw: string): string {
+        if (!raw) return '';
+
+        const escaped = raw
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+
+        const mentionRegex = /@\[([^\]]+)\]\([^)]+\)/g;
+        const cleaned = escaped.replace(mentionRegex, '$1');
+
+        return cleaned.trim();
     }
 }

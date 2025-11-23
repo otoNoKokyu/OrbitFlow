@@ -25,7 +25,8 @@ export const fetchAllIssueSchema = CreateIssueSchema.fork(
   id: Joi.string().optional(),
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).default(10),
-  assignee: Joi.string().optional()
+  assignee: Joi.string().optional(),
+  anyKey: Joi.string().optional().allow('',null)
 });
 
 
@@ -37,5 +38,6 @@ export const updateIssueSchema = Joi.object({
   reporterId: Joi.string().uuid().optional().allow(null, ''),
   assigneeId: Joi.string().uuid().optional().allow(null, ''),
   status: Joi.string().optional().allow(null, ''),
+  attachments:Joi.array().items(Joi.string()).optional(),
   priority: Joi.string().valid('Low', 'Medium', 'High', 'Critical').optional().allow(null, ''),
 });

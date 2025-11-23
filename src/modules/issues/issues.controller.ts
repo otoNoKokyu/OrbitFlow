@@ -31,12 +31,13 @@ export class IssuesController extends BaseController<Issue> {
 @Get('/')
 @UsePipes(new JoiValidationPipe(fetchAllIssueSchema))
 async findAll(
-  @Query() query: EntityAttributes<Issue> & { page: number; limit: number },
+  @Query() query: EntityAttributes<Issue> & { page: number; limit: number; anyKey?:string },
   @Req() req: Request
 ) {
-  const { page = 1, limit = 10, ...filters } = query || {};
+  const { page = 1, limit = 10,anyKey, ... filters  } = query || {};
 
   // if (isEmptyObject(filters)) filters.assigneeId = req.user.userId;
+  if(anyKey) filters['anyKey'] = anyKey
 
   const result = await this.issuesService.findAll(filters, page, limit);
 
@@ -46,7 +47,7 @@ async findAll(
       const json = e.toJSON();
       return {
         ...json,
-        assignee: json.assignee?.username ?? null,
+        assignee: `${json.assignee?.first_name} ${json.assignee?.last_name}`,
         createdAt: new Date(json.createdAt).toLocaleDateString(),
         dueDate: json.dueDate
           ? new Date(json.dueDate).toLocaleDateString()

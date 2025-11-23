@@ -80,7 +80,7 @@ export class Issue extends Model<Issue> {
   dueDate: Date;
 
   @Column({
-    type: DataType.ENUM('task', 'subtask', 'epic', 'story'),
+    type: DataType.ENUM('task', 'subtask', 'epic', 'story', 'bug'),
     allowNull: false,
   })
   type: string;
@@ -94,6 +94,9 @@ export class Issue extends Model<Issue> {
 
   @HasMany(() => Comment, 'issue_id')
   comments: Comment[];
+
+  @HasMany(() => Issue, { as: 'subtasks', foreignKey: 'parentId' })
+  subtasks: Issue[];
 
 
 }

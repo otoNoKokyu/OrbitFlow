@@ -2,7 +2,7 @@ import * as Joi from 'joi';
 
 export const CommentSchema = Joi.object({
   issue_id: Joi.string().uuid().required(),
-  parent_comment_id: Joi.string().uuid().allow(null,''),
+  parent_comment_id: Joi.string().uuid().optional(),
   content: Joi.string().trim().min(1).max(5000).required().messages({
     'string.base': 'Content must be a valid text.',
     'string.empty': 'Content cannot be empty.',

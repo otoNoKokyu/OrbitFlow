@@ -53,7 +53,7 @@ export class CommentService extends BaseService<Comment> {
           }
           const bulkMentions = mentions.map((e) => ({ comment_id: comment.id ?? filter.id, mentioned_user_id: e }));
           await this.commentMentionRepository.bulkCreate(bulkMentions, t, action === 'update' ? ['comment_id', 'mentioned_user_id'] : undefined);
-          await this.eventEmmiter.emitAsync(
+          this.eventEmmiter.emitAsync(
             NotificationType.ISSUE_COMMENT_CHANGE,
             {
               issueId: filter?.issue_id ?? body?.issue_id,
