@@ -39,5 +39,5 @@ export const updateIssueSchema = Joi.object({
   assigneeId: Joi.string().uuid().optional().allow(null, ''),
   status: Joi.string().optional().allow(null, ''),
   attachments:Joi.array().items(Joi.string()).optional(),
-  priority: Joi.string().valid('Low', 'Medium', 'High', 'Critical').optional().allow(null, ''),
+  priority: Joi.string().valid('Low', 'Medium', 'High').optional().allow(null, ''),
 });

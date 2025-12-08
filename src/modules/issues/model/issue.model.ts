@@ -66,6 +66,9 @@ export class Issue extends Model<Issue> {
   @Column({ type: DataType.STRING, allowNull: true })
   priority: string;
 
+  @Column({ type: DataType.STRING, allowNull: true })
+  draftId: string;
+
   @ForeignKey(() => Projects)
   @Column({ type: DataType.UUID, allowNull: false })
   projectId: string;

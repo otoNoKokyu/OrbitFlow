@@ -76,7 +76,9 @@ async findAll(
   async update(
     @Param('id') id: string,
     @Body() updateIssue: TUpdateIssue,
+    @Query('attachment') attachment: boolean
   ) {
+    if(attachment) return await this.issuesService.updateAttachments(id,updateIssue)
     return await this.issuesService.update({id}, updateIssue);
   }
 }

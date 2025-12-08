@@ -67,7 +67,7 @@ export class IssuesService extends BaseService<Issue> {
     const issue = await this.IssueRepository.create(createBody)
     const popultaedIssue = await this.IssueRepository.findIssueForNotification(issue.id)
     if (!isEmptyObject(popultaedIssue)) this.redisService.setTempData(issue.id, popultaedIssue, 7200)
-    await this.eventEmmiter.emitAsync(NotificationType.ISSUE_CREATE, issue)
+    this.eventEmmiter.emitAsync(NotificationType.ISSUE_CREATE, issue)
     return issue;
   }
   async findAll(query: EntityAttributes<Issue>, page = 1, limit = 10) {
@@ -78,8 +78,10 @@ export class IssuesService extends BaseService<Issue> {
   }
   async checkIssueStatus(projectId: string, status: string) {
     const statuses = await this.IssueStatusRepository.findOne({ projectId, status })
-    if (isEmptyObject(statuses)) return false
-    else return true
+    // temporary..please insert the status into db
+    // if (isEmptyObject(statuses)) return false
+    // else return true
+    return true
   }
 
   async update(
@@ -133,6 +135,10 @@ export class IssuesService extends BaseService<Issue> {
       { id: 3, priority: 'Medium' },
     ];
     return { projects, status, types, priorities }
+  }
+
+  async updateAttachments(id:string, body: Pick<Issue,'attachments'> ){
+    return await this.IssueRepository.upsertAttachments(id,body);
   }
 
 

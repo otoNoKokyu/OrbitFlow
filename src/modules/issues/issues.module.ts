@@ -42,9 +42,15 @@ export class IssuesModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(upload,AttachmentMiddleware)
-      .forRoutes({
-        path: 'issues',
-        method: RequestMethod.POST,
-      });
+      .forRoutes(
+        {
+          path: 'issues',
+          method: RequestMethod.POST,
+        },
+        {
+          path: 'issues/:id',
+          method: RequestMethod.PUT,
+        }
+      );
   }
 }

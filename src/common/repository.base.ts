@@ -66,7 +66,6 @@ export class BaseRepository<T extends Model> implements IBaseRepository<T> {
       return await this.model.update(body, {
         where: filter as WhereOptions<T>,
         transaction: activeTransaction,
-        logging:true
       });
     });
   

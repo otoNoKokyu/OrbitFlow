@@ -26,6 +26,8 @@ import { CommentModule } from './modules/comment/comment.module';
 import { CommentMention } from './modules/comment/model/comment_mentions.model';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { NotificationModule } from './modules/notification/notification.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 
 @Module({
@@ -82,7 +84,11 @@ import { NotificationModule } from './modules/notification/notification.module';
     ProjectModule,
     IssuesModule,
     NotificationModule,
-    CommentModule
+    CommentModule,
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'uploads'),
+      serveRoot: '/uploads',
+    }),
   ],
   controllers: [AppController],
   providers: [AppService,

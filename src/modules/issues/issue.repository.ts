@@ -98,10 +98,10 @@ export class IssueRepository extends BaseRepository<Issue> {
               ],
             },
             {
-        model: User,
-        as: 'author',
-        attributes: ['first_name', 'last_name', 'profile_picture_url'],
-      },
+              model: User,
+              as: 'author',
+              attributes: ['first_name', 'last_name', 'profile_picture_url'],
+            },
           ],
         },
       ],
@@ -145,4 +145,27 @@ export class IssueRepository extends BaseRepository<Issue> {
       ['assignee', 'reporter'],
       ['projectIssueId', 'name', 'status', 'updatedAt', "projectId"])
   }
+async upsertAttachments(id: string, body: Pick<Issue, "attachments">) {
+  return await this.model.sequelize!.transaction(async (t) => {
+    const issue = await this.model.findOne({
+      where: { id },
+      transaction: t
+    });
+
+    if (!issue) {
+      return [0] as [number];
+    }
+
+    const incoming = Array.isArray(body.attachments) ? body.attachments : [];
+    const existing = Array.isArray(issue.attachments) ? issue.attachments : [];
+
+    issue.attachments =
+      existing.length > 0 ? [...existing, ...incoming] : incoming;
+
+    await issue.save({ transaction: t });
+
+    return [1] as [number];
+  });
+}
+
 }

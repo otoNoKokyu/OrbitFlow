@@ -1,18 +1,23 @@
 
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
-import { storeFilesToDisk } from 'src/utility/filestorage/filestorage.service';
+import { createFiles, updateFiles } from 'src/utility/filestorage/filestorage.service';
+
 
 @Injectable()
 export class AttachmentMiddleware implements NestMiddleware {
   async use(req: Request, res: Response, next: NextFunction) {
     const files = (req as any).files
-
-    if (files && files.length > 0) {
-      const storedFiles = await storeFilesToDisk(files);
-      (req as any).storedFiles = storedFiles;
-      (req as any).body.attachments = storedFiles.map((f) => f.id);
+    if(!files) { return next()}
+    let storedFileInfo = null
+    if (req.body.draftId) {
+      storedFileInfo = await updateFiles(req.body.draftId, files)
     }
+    else {
+      storedFileInfo = await createFiles(files);
+    }
+    (req as any).body.attachments = storedFileInfo.stored.map((f) => f.name);
+    req.body.draftId = storedFileInfo.draftId
 
     next();
   }
